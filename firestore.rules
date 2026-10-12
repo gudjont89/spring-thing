@@ -8,23 +8,20 @@ service cloud.firestore {
     match /polls/{pollId} {
       allow read: if true;
 
+      // Polls cannot be changed once created; voting ends durationMinutes after createdAt.
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['books', 'votesPerVoter', 'ownerId', 'closed', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['books', 'votesPerVoter', 'durationMinutes', 'ownerId', 'createdAt'])
         && request.resource.data.books is list
         && request.resource.data.books.size() >= 2
         && request.resource.data.books.size() <= 15
         && request.resource.data.votesPerVoter is int
         && request.resource.data.votesPerVoter >= 1
         && request.resource.data.votesPerVoter < request.resource.data.books.size()
+        && request.resource.data.durationMinutes is int
+        && request.resource.data.durationMinutes >= 1
+        && request.resource.data.durationMinutes <= 5
         && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.closed == false
         && request.resource.data.createdAt == request.time;
-
-      // Only the creator may change a poll, and only to close it.
-      allow update: if request.auth != null
-        && resource.data.ownerId == request.auth.uid
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closed'])
-        && request.resource.data.closed == true;
 
       // Vote documents are keyed by the voter's uid, so each browser has one ballot.
       // A ballot lists distinct book indexes, at most votesPerVoter of them.
@@ -33,11 +30,18 @@ service cloud.firestore {
           return get(/databases/$(database)/documents/polls/$(pollId)).data;
         }
 
-        allow read: if true;
+        function deadline() {
+          return poll().createdAt + duration.value(poll().durationMinutes, 'm');
+        }
+
+        // Voters can always see their own ballot, but nobody sees the others until voting ends.
+        allow get: if (request.auth != null && request.auth.uid == voterId)
+          || request.time >= deadline();
+        allow list: if request.time >= deadline();
 
         allow create, update: if request.auth != null
           && request.auth.uid == voterId
-          && poll().closed == false
+          && request.time < deadline()
           && request.resource.data.keys().hasOnly(['books', 'votedAt'])
           && request.resource.data.books is list
           && request.resource.data.books.size() >= 1

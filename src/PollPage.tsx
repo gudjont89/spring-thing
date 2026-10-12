@@ -1,17 +1,28 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import type { FirestoreError } from 'firebase/firestore'
 import { ensureSignedIn } from './firebase'
-import { castVote, closePoll, pollUrl, tally, watchPoll, watchVotes, type Book, type Poll, type Votes } from './polls'
+import { castVote, fetchVotes, pollUrl, tally, watchPoll, watchVote, type Book, type Poll, type Votes } from './polls'
 import { SharePanel } from './SharePanel'
+
+// How often, and how many times, to ask for results that the server says are not available yet.
+const RESULTS_RETRY_MS = 2000
+const RESULTS_MAX_RETRIES = 10
 
 export function PollPage({ pollId }: { pollId: string }) {
   // undefined while loading, null if the poll does not exist
   const [poll, setPoll] = useState<Poll | null | undefined>(undefined)
-  const [votes, setVotes] = useState<Votes>(new Map())
   const [uid, setUid] = useState<string | null>(null)
+  // undefined until this browser has voted
+  const [myVote, setMyVote] = useState<number[] | undefined>(undefined)
+  // null until the poll closes and the ballots have been read
+  const [results, setResults] = useState<Votes | null>(null)
+  const [now, setNow] = useState(() => Date.now())
   // null until the voter changes their picks; their saved vote applies until then
   const [selected, setSelected] = useState<number[] | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const closed = poll ? now >= poll.closesAt.getTime() : false
 
   useEffect(() => {
     ensureSignedIn().then(
@@ -20,15 +31,50 @@ export function PollPage({ pollId }: { pollId: string }) {
     )
   }, [])
 
+  useEffect(() => watchPoll(pollId, setPoll, (err) => setError(err.message)), [pollId])
+
   useEffect(() => {
-    const onError = (err: Error) => setError(err.message)
-    const stopPoll = watchPoll(pollId, setPoll, onError)
-    const stopVotes = watchVotes(pollId, setVotes, onError)
-    return () => {
-      stopPoll()
-      stopVotes()
+    if (!uid) return
+    return watchVote(pollId, uid, setMyVote, (err) => setError(err.message))
+  }, [pollId, uid])
+
+  // Tick once a second for the countdown, until voting ends.
+  useEffect(() => {
+    if (!poll || closed) return
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [poll, closed])
+
+  // Read the ballots once when voting ends; they cannot change after that.
+  useEffect(() => {
+    if (!closed) return
+    let cancelled = false
+    let retryTimer: ReturnType<typeof setTimeout> | undefined
+    let retries = 0
+    const load = () => {
+      fetchVotes(pollId).then(
+        (votes) => {
+          if (!cancelled) setResults(votes)
+        },
+        (err: FirestoreError) => {
+          if (cancelled) return
+          // This browser's clock may run ahead of the server's, so the server can refuse
+          // for a few seconds after the countdown ends.
+          if (err.code === 'permission-denied' && retries < RESULTS_MAX_RETRIES) {
+            retries++
+            retryTimer = setTimeout(load, RESULTS_RETRY_MS)
+          } else {
+            setError(err.message)
+          }
+        },
+      )
     }
-  }, [pollId])
+    load()
+    return () => {
+      cancelled = true
+      clearTimeout(retryTimer)
+    }
+  }, [pollId, closed])
 
   if (poll === undefined) {
     return <p className="card">{error ? `Could not load the poll: ${error}` : 'Loading…'}</p>
@@ -44,11 +90,8 @@ export function PollPage({ pollId }: { pollId: string }) {
     )
   }
 
-  const myVote = uid ? votes.get(uid) : undefined
-  const isOwner = uid === poll.ownerId
   const choice = selected ?? myVote ?? []
   const choiceUnchanged = myVote !== undefined && sameBooks(choice, myVote)
-  const showResults = myVote !== undefined || poll.closed || isOwner
 
   function toggle(index: number) {
     setSelected(choice.includes(index) ? choice.filter((book) => book !== index) : [...choice, index])
@@ -73,9 +116,13 @@ export function PollPage({ pollId }: { pollId: string }) {
     <>
       <section className="card">
         <h1>Which book should we read next?</h1>
-        {poll.closed && <p className="badge">This poll is closed.</p>}
+        {closed ? (
+          <p className="badge">Voting has ended.</p>
+        ) : (
+          <p className="badge">Voting ends in {formatRemaining(poll.closesAt.getTime() - now)}.</p>
+        )}
 
-        {!poll.closed && (
+        {!closed && (
           <form onSubmit={handleVote}>
             <fieldset className="field">
               <legend>
@@ -105,24 +152,27 @@ export function PollPage({ pollId }: { pollId: string }) {
           </form>
         )}
 
+        {!closed && myVote !== undefined && (
+          <p className="muted">Thanks for voting. Results will be shown when voting ends.</p>
+        )}
+
         {error && <p className="error">{error}</p>}
 
-        {showResults && <Results poll={poll} votes={votes} myVote={myVote} />}
-
-        {isOwner && !poll.closed && (
-          <button type="button" className="ghost" onClick={() => closePoll(pollId).catch((err: Error) => setError(err.message))}>
-            Close poll
-          </button>
-        )}
+        {closed && (results ? <Results poll={poll} votes={results} myVote={myVote} /> : !error && <p>Counting votes…</p>)}
       </section>
 
-      {!poll.closed && <SharePanel url={pollUrl(pollId)} />}
+      {!closed && <SharePanel url={pollUrl(pollId)} />}
 
       <p>
         <a href="#/">Create your own poll</a>
       </p>
     </>
   )
+}
+
+function formatRemaining(ms: number): string {
+  const seconds = Math.max(0, Math.ceil(ms / 1000))
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
 }
 
 function sameBooks(a: number[], b: number[]): boolean {

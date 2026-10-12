@@ -3,16 +3,23 @@ import {
   createPoll,
   MAX_AUTHOR_LENGTH,
   MAX_BOOKS,
+  MAX_DURATION_MINUTES,
   MAX_TITLE_LENGTH,
   MIN_BOOKS,
+  MIN_DURATION_MINUTES,
   type Book,
 } from './polls'
 
 const emptyBook = { title: '', author: '' }
+const durationChoices = Array.from(
+  { length: MAX_DURATION_MINUTES - MIN_DURATION_MINUTES + 1 },
+  (_, i) => MIN_DURATION_MINUTES + i,
+)
 
 export function CreatePoll() {
   const [books, setBooks] = useState([emptyBook, emptyBook])
   const [votesPerVoter, setVotesPerVoter] = useState(1)
+  const [durationMinutes, setDurationMinutes] = useState(MAX_DURATION_MINUTES)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,7 +42,7 @@ export function CreatePoll() {
     setSubmitting(true)
     setError(null)
     try {
-      const pollId = await createPoll(filledBooks, votesPerVoter)
+      const pollId = await createPoll(filledBooks, votesPerVoter, durationMinutes)
       location.hash = `#/p/${pollId}`
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -96,6 +103,21 @@ export function CreatePoll() {
           max={maxVotesPerVoter}
           step={1}
         />
+      </label>
+
+      <label className="field">
+        <span>Voting time</span>
+        <select
+          className="narrow"
+          value={durationMinutes}
+          onChange={(event) => setDurationMinutes(Number(event.target.value))}
+        >
+          {durationChoices.map((minutes) => (
+            <option key={minutes} value={minutes}>
+              {minutes} {minutes === 1 ? 'minute' : 'minutes'}
+            </option>
+          ))}
+        </select>
       </label>
 
       {hasDuplicates && <p className="error">Each book can only be listed once.</p>}

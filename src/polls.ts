@@ -2,10 +2,10 @@ import {
   addDoc,
   collection,
   doc,
+  getDocs,
   onSnapshot,
   serverTimestamp,
   setDoc,
-  updateDoc,
 } from 'firebase/firestore'
 import { db, ensureSignedIn } from './firebase'
 
@@ -14,6 +14,8 @@ export const MAX_TITLE_LENGTH = 150
 export const MAX_AUTHOR_LENGTH = 100
 export const MIN_BOOKS = 2
 export const MAX_BOOKS = 15
+export const MIN_DURATION_MINUTES = 1
+export const MAX_DURATION_MINUTES = 5
 
 export interface Book {
   title: string
@@ -25,8 +27,10 @@ export interface Poll {
   books: Book[]
   /** How many different books each voter may pick. Always less than the number of books. */
   votesPerVoter: number
+  durationMinutes: number
   ownerId: string
-  closed: boolean
+  /** When voting ends: createdAt plus durationMinutes. Results are hidden until then. */
+  closesAt: Date
 }
 
 /** Maps voter uid to the indexes of the books they picked. */
@@ -37,13 +41,13 @@ export function pollUrl(pollId: string): string {
   return `${location.origin}${location.pathname}#/p/${pollId}`
 }
 
-export async function createPoll(books: Book[], votesPerVoter: number): Promise<string> {
+export async function createPoll(books: Book[], votesPerVoter: number, durationMinutes: number): Promise<string> {
   const user = await ensureSignedIn()
   const ref = await addDoc(collection(db, 'polls'), {
     books,
     votesPerVoter,
+    durationMinutes,
     ownerId: user.uid,
-    closed: false,
     createdAt: serverTimestamp(),
   })
   return ref.id
@@ -57,15 +61,17 @@ export function watchPoll(
   return onSnapshot(
     doc(db, 'polls', pollId),
     (snapshot) => {
-      const data = snapshot.data()
+      // Estimate createdAt while the creator's own write is still pending on the server.
+      const data = snapshot.data({ serverTimestamps: 'estimate' })
       onChange(
         data
           ? {
               id: snapshot.id,
               books: data.books,
               votesPerVoter: data.votesPerVoter,
+              durationMinutes: data.durationMinutes,
               ownerId: data.ownerId,
-              closed: data.closed,
+              closesAt: new Date(data.createdAt.toMillis() + data.durationMinutes * 60_000),
             }
           : null,
       )
@@ -74,18 +80,27 @@ export function watchPoll(
   )
 }
 
-export function watchVotes(
+/** Watches one voter's ballot, which they may read before the poll closes. Reports undefined if they have not voted. */
+export function watchVote(
   pollId: string,
-  onChange: (votes: Votes) => void,
+  voterId: string,
+  onChange: (books: number[] | undefined) => void,
   onError: (error: Error) => void,
 ): () => void {
   return onSnapshot(
-    collection(db, 'polls', pollId, 'votes'),
-    (snapshot) => {
-      onChange(new Map(snapshot.docs.map((vote) => [vote.id, vote.data().books])))
-    },
+    doc(db, 'polls', pollId, 'votes', voterId),
+    (snapshot) => onChange(snapshot.data()?.books),
     onError,
   )
+}
+
+/**
+ * Reads every ballot once. Security Rules only allow this after the poll closes,
+ * and ballots cannot change after that, so there is nothing to watch.
+ */
+export async function fetchVotes(pollId: string): Promise<Votes> {
+  const snapshot = await getDocs(collection(db, 'polls', pollId, 'votes'))
+  return new Map(snapshot.docs.map((vote) => [vote.id, vote.data().books]))
 }
 
 /**
@@ -98,10 +113,6 @@ export async function castVote(pollId: string, books: number[]): Promise<void> {
     books,
     votedAt: serverTimestamp(),
   })
-}
-
-export async function closePoll(pollId: string): Promise<void> {
-  await updateDoc(doc(db, 'polls', pollId), { closed: true })
 }
 
 export function tally(votes: Votes, bookCount: number): number[] {

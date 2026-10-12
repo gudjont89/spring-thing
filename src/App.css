@@ -45,7 +45,8 @@ main {
   margin-bottom: 0.5rem;
 }
 
-input:not([type='checkbox']) {
+input:not([type='checkbox']),
+select {
   font: inherit;
   color: var(--text-h);
   background: var(--bg);
@@ -61,7 +62,13 @@ input.narrow {
   width: 6rem;
 }
 
+select.narrow {
+  flex: none;
+  width: 9rem;
+}
+
 input:focus-visible,
+select:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
