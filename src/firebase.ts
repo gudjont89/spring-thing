@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import { getAuth, signInAnonymously, type User } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
 // Firebase web config is not secret; access is controlled by Security Rules.
@@ -16,3 +16,16 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
+
+let signingIn: Promise<User> | undefined
+
+// Visitors never see a login: each browser gets a silent anonymous account,
+// which lets Security Rules allow one vote per browser and only let a poll's creator close it.
+export function ensureSignedIn(): Promise<User> {
+  signingIn ??= auth.authStateReady().then(async () => {
+    if (auth.currentUser) return auth.currentUser
+    const { user } = await signInAnonymously(auth)
+    return user
+  })
+  return signingIn
+}

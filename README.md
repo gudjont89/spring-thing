@@ -14,6 +14,21 @@ Other scripts: `npm run build`, `npm run preview`, `npm run lint`.
 
 Firebase is initialized in `src/firebase.ts`, which exports `app`, `auth` and `db` (Firestore).
 
+## Polls
+
+Anyone can create a poll at `#/` and share it as a link (`#/p/<pollId>`) or QR code. Nobody signs in: the app silently signs each browser in with Firebase Anonymous Auth, and Security Rules allow one vote per anonymous account. Someone who opens a private window or clears site data can vote again.
+
+Data lives in Firestore under `polls/{pollId}`, with one document per voter in `polls/{pollId}/votes/{uid}`. Only the poll's creator, identified by their browser, can close a poll.
+
+One-time Firebase setup:
+
+1. In the Firebase console, under **Authentication > Sign-in method**, enable **Anonymous**.
+2. Deploy the Security Rules in `firestore.rules`, either by pasting them into **Firestore Database > Rules** or with:
+
+   ```sh
+   npx firebase-tools deploy --only firestore:rules --project <your-project-id>
+   ```
+
 ## Deploying to GitHub Pages
 
 1. Push this repo to GitHub on the `main` branch.

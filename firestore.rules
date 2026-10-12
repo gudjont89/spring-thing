@@ -1,0 +1,48 @@
+rules_version = '2';
+
+// Everyone is signed in anonymously by the app (see ensureSignedIn in src/firebase.ts),
+// so request.auth.uid identifies a browser. Limits mirror the constants in src/polls.ts.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /polls/{pollId} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['question', 'options', 'ownerId', 'closed', 'createdAt'])
+        && request.resource.data.question is string
+        && request.resource.data.question.size() > 0
+        && request.resource.data.question.size() <= 200
+        && request.resource.data.options is list
+        && request.resource.data.options.size() >= 2
+        && request.resource.data.options.size() <= 10
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.closed == false
+        && request.resource.data.createdAt == request.time;
+
+      // Only the creator may change a poll, and only to close it.
+      allow update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closed'])
+        && request.resource.data.closed == true;
+
+      // Vote documents are keyed by the voter's uid, so each browser has at most one vote.
+      match /votes/{voterId} {
+        function poll() {
+          return get(/databases/$(database)/documents/polls/$(pollId)).data;
+        }
+
+        allow read: if true;
+
+        allow create, update: if request.auth != null
+          && request.auth.uid == voterId
+          && poll().closed == false
+          && request.resource.data.keys().hasOnly(['option', 'votedAt'])
+          && request.resource.data.option is int
+          && request.resource.data.option >= 0
+          && request.resource.data.option < poll().options.size()
+          && request.resource.data.votedAt == request.time;
+      }
+    }
+  }
+}
