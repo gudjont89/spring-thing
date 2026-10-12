@@ -10,32 +10,38 @@ import {
 import { db, ensureSignedIn } from './firebase'
 
 // Limits are mirrored in firestore.rules.
-export const MAX_QUESTION_LENGTH = 200
-export const MAX_OPTION_LENGTH = 100
-export const MIN_OPTIONS = 2
-export const MAX_OPTIONS = 10
+export const MAX_TITLE_LENGTH = 150
+export const MAX_AUTHOR_LENGTH = 100
+export const MIN_BOOKS = 2
+export const MAX_BOOKS = 15
+
+export interface Book {
+  title: string
+  author: string | null
+}
 
 export interface Poll {
   id: string
-  question: string
-  options: string[]
+  books: Book[]
+  /** How many different books each voter may pick. Always less than the number of books. */
+  votesPerVoter: number
   ownerId: string
   closed: boolean
 }
 
-/** Maps voter uid to the index of the option they chose. */
-export type Votes = Map<string, number>
+/** Maps voter uid to the indexes of the books they picked. */
+export type Votes = Map<string, number[]>
 
 export function pollUrl(pollId: string): string {
   // Hash routing, since GitHub Pages cannot rewrite unknown paths to index.html.
   return `${location.origin}${location.pathname}#/p/${pollId}`
 }
 
-export async function createPoll(question: string, options: string[]): Promise<string> {
+export async function createPoll(books: Book[], votesPerVoter: number): Promise<string> {
   const user = await ensureSignedIn()
   const ref = await addDoc(collection(db, 'polls'), {
-    question,
-    options,
+    books,
+    votesPerVoter,
     ownerId: user.uid,
     closed: false,
     createdAt: serverTimestamp(),
@@ -56,8 +62,8 @@ export function watchPoll(
         data
           ? {
               id: snapshot.id,
-              question: data.question,
-              options: data.options,
+              books: data.books,
+              votesPerVoter: data.votesPerVoter,
               ownerId: data.ownerId,
               closed: data.closed,
             }
@@ -76,17 +82,20 @@ export function watchVotes(
   return onSnapshot(
     collection(db, 'polls', pollId, 'votes'),
     (snapshot) => {
-      onChange(new Map(snapshot.docs.map((vote) => [vote.id, vote.data().option])))
+      onChange(new Map(snapshot.docs.map((vote) => [vote.id, vote.data().books])))
     },
     onError,
   )
 }
 
-/** Casts or changes the current browser's vote; the vote document is keyed by uid. */
-export async function castVote(pollId: string, option: number): Promise<void> {
+/**
+ * Casts or replaces the current browser's vote; the vote document is keyed by uid.
+ * `books` holds distinct book indexes, at most the poll's votesPerVoter of them.
+ */
+export async function castVote(pollId: string, books: number[]): Promise<void> {
   const user = await ensureSignedIn()
   await setDoc(doc(db, 'polls', pollId, 'votes', user.uid), {
-    option,
+    books,
     votedAt: serverTimestamp(),
   })
 }
@@ -95,10 +104,12 @@ export async function closePoll(pollId: string): Promise<void> {
   await updateDoc(doc(db, 'polls', pollId), { closed: true })
 }
 
-export function tally(votes: Votes, optionCount: number): number[] {
-  const counts = new Array<number>(optionCount).fill(0)
-  for (const option of votes.values()) {
-    if (option >= 0 && option < optionCount) counts[option]++
+export function tally(votes: Votes, bookCount: number): number[] {
+  const counts = new Array<number>(bookCount).fill(0)
+  for (const books of votes.values()) {
+    for (const book of books) {
+      if (book >= 0 && book < bookCount) counts[book]++
+    }
   }
   return counts
 }

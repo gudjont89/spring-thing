@@ -25,7 +25,7 @@ main {
   margin: 0;
 }
 
-.question {
+.book {
   overflow-wrap: anywhere;
 }
 
@@ -45,7 +45,7 @@ main {
   margin-bottom: 0.5rem;
 }
 
-input:not([type='radio']) {
+input:not([type='checkbox']) {
   font: inherit;
   color: var(--text-h);
   background: var(--bg);
@@ -54,6 +54,11 @@ input:not([type='radio']) {
   padding: 0.5rem 0.75rem;
   flex: 1;
   min-width: 0;
+}
+
+input.narrow {
+  flex: none;
+  width: 6rem;
 }
 
 input:focus-visible,
@@ -98,6 +103,11 @@ button.ghost {
   border-radius: 8px;
   cursor: pointer;
   color: var(--text-h);
+}
+
+.choice:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .choice:has(input:checked) {

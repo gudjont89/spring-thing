@@ -9,13 +9,13 @@ service cloud.firestore {
       allow read: if true;
 
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['question', 'options', 'ownerId', 'closed', 'createdAt'])
-        && request.resource.data.question is string
-        && request.resource.data.question.size() > 0
-        && request.resource.data.question.size() <= 200
-        && request.resource.data.options is list
-        && request.resource.data.options.size() >= 2
-        && request.resource.data.options.size() <= 10
+        && request.resource.data.keys().hasOnly(['books', 'votesPerVoter', 'ownerId', 'closed', 'createdAt'])
+        && request.resource.data.books is list
+        && request.resource.data.books.size() >= 2
+        && request.resource.data.books.size() <= 15
+        && request.resource.data.votesPerVoter is int
+        && request.resource.data.votesPerVoter >= 1
+        && request.resource.data.votesPerVoter < request.resource.data.books.size()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.closed == false
         && request.resource.data.createdAt == request.time;
@@ -26,7 +26,8 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['closed'])
         && request.resource.data.closed == true;
 
-      // Vote documents are keyed by the voter's uid, so each browser has at most one vote.
+      // Vote documents are keyed by the voter's uid, so each browser has one ballot.
+      // A ballot lists distinct book indexes, at most votesPerVoter of them.
       match /votes/{voterId} {
         function poll() {
           return get(/databases/$(database)/documents/polls/$(pollId)).data;
@@ -37,10 +38,13 @@ service cloud.firestore {
         allow create, update: if request.auth != null
           && request.auth.uid == voterId
           && poll().closed == false
-          && request.resource.data.keys().hasOnly(['option', 'votedAt'])
-          && request.resource.data.option is int
-          && request.resource.data.option >= 0
-          && request.resource.data.option < poll().options.size()
+          && request.resource.data.keys().hasOnly(['books', 'votedAt'])
+          && request.resource.data.books is list
+          && request.resource.data.books.size() >= 1
+          && request.resource.data.books.size() <= poll().votesPerVoter
+          && request.resource.data.books.toSet().size() == request.resource.data.books.size()
+          // Rules cannot loop, so check every index against the valid ones, 0 to MAX_BOOKS - 1.
+          && request.resource.data.books.hasOnly([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14][0:poll().books.size()])
           && request.resource.data.votedAt == request.time;
       }
     }

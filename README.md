@@ -16,9 +16,9 @@ Firebase is initialized in `src/firebase.ts`, which exports `app`, `auth` and `d
 
 ## Polls
 
-Anyone can create a poll at `#/` and share it as a link (`#/p/<pollId>`) or QR code. Nobody signs in: the app silently signs each browser in with Firebase Anonymous Auth, and Security Rules allow one vote per anonymous account. Someone who opens a private window or clears site data can vote again.
+Polls pick the next book for a book club. Anyone can create a poll at `#/` by listing 2–15 books (title, plus an optional author) and choosing how many votes each person gets. That number must be lower than the number of books. Each person can pick up to that many different books. The poll can be shared as a link (`#/p/<pollId>`) or QR code. Nobody signs in: the app silently signs each browser in with Firebase Anonymous Auth, and Security Rules allow one ballot per anonymous account. Someone who opens a private window or clears site data can vote again.
 
-Data lives in Firestore under `polls/{pollId}`, with one document per voter in `polls/{pollId}/votes/{uid}`. Only the poll's creator, identified by their browser, can close a poll.
+Data lives in Firestore under `polls/{pollId}`, with one ballot document per voter in `polls/{pollId}/votes/{uid}`. Only the poll's creator, identified by their browser, can close a poll.
 
 One-time Firebase setup:
 
