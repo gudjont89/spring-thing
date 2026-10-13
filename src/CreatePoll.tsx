@@ -117,7 +117,7 @@ export function CreatePoll() {
 
   return (
     <form className="card sketched" onSubmit={handleSubmit}>
-      <Sketch fill="solid" />
+      <Sketch />
       <h1>Pick the next book</h1>
 
       <fieldset className="field">

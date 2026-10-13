@@ -37,8 +37,6 @@ main {
 }
 
 .card {
-  --sketch-stroke: var(--card);
-  --sketch-fill: var(--card);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -100,8 +98,7 @@ select {
 }
 
 .input-box:focus-within {
-  --sketch-stroke: var(--accent);
-  --sketch-fill: #fff;
+  --sketch-stroke: var(--accent-border);
 }
 
 .input-box input {
@@ -110,7 +107,7 @@ select {
 
 select:focus-visible,
 button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-border);
   outline-offset: 1px;
 }
 
@@ -183,7 +180,7 @@ button {
   background: transparent;
   --sketch-stroke: var(--accent);
   --sketch-fill: var(--accent);
-  color: var(--card);
+  color: var(--on-accent);
   align-self: flex-start;
 }
 
@@ -197,8 +194,8 @@ button:disabled {
 }
 
 button.ghost {
-  color: var(--accent);
-  --sketch-stroke: var(--accent);
+  color: var(--text-h);
+  --sketch-stroke: var(--accent-border);
 }
 
 .choice {
@@ -216,7 +213,7 @@ button.ghost {
 }
 
 .choice:has(input:checked) {
-  --sketch-stroke: var(--accent);
+  --sketch-stroke: var(--accent-border);
   --sketch-fill: var(--accent-border);
 }
 
@@ -256,11 +253,11 @@ button.ghost {
 }
 
 .badge {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .error {
-  color: #9b1c1c;
+  color: #d33;
 }
 
 .qr {

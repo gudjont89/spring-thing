@@ -24,7 +24,7 @@ export function SharePanel({ url }: { url: string }) {
 
   return (
     <section className="card sketched share">
-      <Sketch fill="solid" />
+      <Sketch />
       <h2>Share this poll</h2>
       <p>Anyone with the link or QR code can vote. No sign-in needed.</p>
       <div className="option-row">
