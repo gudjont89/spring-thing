@@ -1,5 +1,6 @@
 import QRCode from 'qrcode'
 import { useEffect, useState } from 'react'
+import { Button, Sketch, TextInput } from './Sketch'
 
 export function SharePanel({ url }: { url: string }) {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
@@ -22,14 +23,15 @@ export function SharePanel({ url }: { url: string }) {
   }
 
   return (
-    <section className="card share">
+    <section className="card sketched share">
+      <Sketch />
       <h2>Share this poll</h2>
       <p>Anyone with the link or QR code can vote. No sign-in needed.</p>
       <div className="option-row">
-        <input value={url} readOnly onFocus={(event) => event.target.select()} aria-label="Poll link" />
-        <button type="button" onClick={copy}>
+        <TextInput value={url} readOnly onFocus={(event) => event.target.select()} aria-label="Poll link" />
+        <Button type="button" onClick={copy}>
           {copied ? 'Copied!' : 'Copy'}
-        </button>
+        </Button>
       </div>
       {qrDataUrl && <img className="qr" src={qrDataUrl} alt="QR code linking to this poll" />}
     </section>

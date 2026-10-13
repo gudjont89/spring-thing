@@ -10,9 +10,33 @@ main {
   gap: 1.5rem;
 }
 
+/* Hand-drawn outlines: <Sketch> paints an SVG behind the host and reads these variables. */
+.sketched {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Zero specificity so button, input and choice rules can override the defaults. */
+:where(.sketched) {
+  --sketch-stroke: var(--border);
+  --sketch-fill: transparent;
+}
+
+.sketch {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.input-box:focus-within .sketch path {
+  stroke-width: 2.5;
+}
+
 .card {
-  border: 1px solid var(--border);
-  border-radius: 12px;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -49,15 +73,28 @@ input:not([type='checkbox']),
 select {
   font: inherit;
   color: var(--text-h);
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: none;
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
   flex: 1;
   min-width: 0;
 }
 
-input:focus-visible,
+.input-box {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.input-box:focus-within {
+  --sketch-stroke: var(--accent);
+}
+
+.input-box input {
+  outline: none;
+}
+
 select:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--accent);
@@ -121,8 +158,10 @@ button {
   cursor: pointer;
   border-radius: 8px;
   padding: 0.5rem 1rem;
-  border: 1px solid var(--accent);
-  background: var(--accent);
+  border: none;
+  background: transparent;
+  --sketch-stroke: var(--accent);
+  --sketch-fill: var(--accent);
   color: #fff;
   align-self: flex-start;
 }
@@ -133,9 +172,8 @@ button:disabled {
 }
 
 button.ghost {
-  background: transparent;
   color: var(--accent);
-  border-color: var(--accent-border);
+  --sketch-stroke: var(--accent-border);
 }
 
 .choice {
@@ -143,8 +181,6 @@ button.ghost {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
   cursor: pointer;
   color: var(--text-h);
 }
@@ -155,8 +191,8 @@ button.ghost {
 }
 
 .choice:has(input:checked) {
-  border-color: var(--accent-border);
-  background: var(--accent-bg);
+  --sketch-stroke: var(--accent);
+  --sketch-fill: var(--accent-border);
 }
 
 .choice input {

@@ -10,6 +10,7 @@ import {
   MIN_DURATION_MINUTES,
   type Book,
 } from './polls'
+import { Button, Sketch, TextInput } from './Sketch'
 
 const emptyBook = { title: '', author: '' }
 
@@ -28,25 +29,25 @@ function Stepper({ label, value, min, max, onChange, format = String }: StepperP
     <div className="field" role="group" aria-labelledby={labelId}>
       <span id={labelId}>{label}</span>
       <div className="stepper">
-        <button
+        <Button
           type="button"
-          className="ghost"
+          ghost
           onClick={() => onChange(value - 1)}
           disabled={value <= min}
           aria-label={`Decrease ${label.toLowerCase()}`}
         >
           −
-        </button>
+        </Button>
         <output aria-live="polite">{format(value)}</output>
-        <button
+        <Button
           type="button"
-          className="ghost"
+          ghost
           onClick={() => onChange(value + 1)}
           disabled={value >= max}
           aria-label={`Increase ${label.toLowerCase()}`}
         >
           +
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -117,7 +118,8 @@ export function CreatePoll() {
   }
 
   return (
-    <form className="card" onSubmit={handleSubmit}>
+    <form className="card sketched" onSubmit={handleSubmit}>
+      <Sketch />
       <h1>Pick the next book</h1>
 
       <fieldset className="field">
@@ -125,7 +127,7 @@ export function CreatePoll() {
         {books.map((book, index) => (
           <div className="book-entry" key={index}>
             <div className="book-fields">
-              <input
+              <TextInput
                 ref={(element) => {
                   titleInputs.current[index] = element
                 }}
@@ -139,7 +141,7 @@ export function CreatePoll() {
               />
               <label className="book-author-row">
                 <span>by</span>
-                <input
+                <TextInput
                   value={book.author}
                   onChange={(event) => setBook(index, 'author', event.target.value)}
                   onKeyDown={handleBookKeyDown}
@@ -149,20 +151,20 @@ export function CreatePoll() {
                 />
               </label>
             </div>
-            <button
+            <Button
               type="button"
-              className="ghost"
+              ghost
               onClick={() => removeBook(index)}
               aria-label={`Remove book ${index + 1}`}
             >
               ✕
-            </button>
+            </Button>
           </div>
         ))}
         {books.length < MAX_BOOKS && (
-          <button type="button" className="ghost round" onClick={addBook} aria-label="Add book">
+          <Button type="button" ghost round onClick={addBook} aria-label="Add book">
             +
-          </button>
+          </Button>
         )}
       </fieldset>
 
@@ -186,9 +188,9 @@ export function CreatePoll() {
       {hasDuplicates && <p className="error">Each book can only be listed once.</p>}
       {error && <p className="error">Could not create the poll: {error}</p>}
 
-      <button type="submit" disabled={!canSubmit}>
+      <Button type="submit" disabled={!canSubmit}>
         {submitting ? 'Creating…' : 'Create poll'}
-      </button>
+      </Button>
     </form>
   )
 }

@@ -3,6 +3,7 @@ import type { FirestoreError } from 'firebase/firestore'
 import { ensureSignedIn } from './firebase'
 import { castVote, fetchVotes, pollUrl, tally, watchPoll, watchVote, type Book, type Poll, type Votes } from './polls'
 import { SharePanel } from './SharePanel'
+import { Button, Sketch } from './Sketch'
 
 // How often, and how many times, to ask for results that the server says are not available yet.
 const RESULTS_RETRY_MS = 2000
@@ -77,11 +78,17 @@ export function PollPage({ pollId }: { pollId: string }) {
   }, [pollId, closed])
 
   if (poll === undefined) {
-    return <p className="card">{error ? `Could not load the poll: ${error}` : 'Loading…'}</p>
+    return (
+      <p className="card sketched">
+        <Sketch />
+        {error ? `Could not load the poll: ${error}` : 'Loading…'}
+      </p>
+    )
   }
   if (poll === null) {
     return (
-      <div className="card">
+      <div className="card sketched">
+        <Sketch />
         <h1>Poll not found</h1>
         <p>
           Check the link, or <a href="#/">create a new poll</a>.
@@ -114,7 +121,8 @@ export function PollPage({ pollId }: { pollId: string }) {
 
   return (
     <>
-      <section className="card">
+      <section className="card sketched">
+        <Sketch />
         <h1>Which book should we read next?</h1>
         {closed ? (
           <p className="badge">Voting has ended.</p>
@@ -134,7 +142,8 @@ export function PollPage({ pollId }: { pollId: string }) {
               {poll.books.map((book, index) => {
                 const checked = choice.includes(index)
                 return (
-                  <label className="choice" key={index}>
+                  <label className="choice sketched" key={index}>
+                    <Sketch fill="hachure" />
                     <input
                       type="checkbox"
                       checked={checked}
@@ -146,9 +155,9 @@ export function PollPage({ pollId }: { pollId: string }) {
                 )
               })}
             </fieldset>
-            <button type="submit" disabled={choice.length === 0 || choiceUnchanged || submitting || !uid}>
+            <Button type="submit" disabled={choice.length === 0 || choiceUnchanged || submitting || !uid}>
               {submitting ? 'Voting…' : myVote === undefined ? 'Vote' : 'Change vote'}
-            </button>
+            </Button>
           </form>
         )}
 
