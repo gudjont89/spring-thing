@@ -32,6 +32,10 @@ main {
   z-index: -1;
 }
 
+button.ghost .sketch path {
+  stroke-width: 3;
+}
+
 .input-box:focus-within .sketch path {
   stroke-width: 2.5;
 }

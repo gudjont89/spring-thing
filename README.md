@@ -50,3 +50,5 @@ ranked voting (Schulze, paired rating)
 Eurovision (12, 10, 8-1)
 
 Pick names and avatars, optionally display them while viewing the results
+
+Add progress bar on voting page
