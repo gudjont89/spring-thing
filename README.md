@@ -39,3 +39,14 @@ One-time Firebase setup:
 Every push to `main` builds and deploys via `.github/workflows/deploy.yml`.
 
 The Firebase web config is public by design. Protect your data with Firestore Security Rules.
+
+## todo
+
+Plot bar charts over time. Say the poll lasts 2 minutes and the ballots come in at 15 s, 32 s, 49 s, 1m10s, 1m13s and 1m41s. Wait for 1 second before displaying anything, but then start at 15 s and move the bars for the equivalent of 15 s. The total time should be about 30 seconds.
+
+Voting types:
+n votes per ballot
+ranked voting (Schulze, paired rating)
+Eurovision (12, 10, 8-1)
+
+Pick names and avatars, optionally display them while viewing the results
