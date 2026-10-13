@@ -54,7 +54,7 @@ function Stepper({ label, value, min, max, onChange, format = String }: StepperP
 }
 
 export function CreatePoll() {
-  const [books, setBooks] = useState([emptyBook, emptyBook])
+  const [books, setBooks] = useState([emptyBook])
   const [requestedVotes, setRequestedVotes] = useState(1)
   const [durationMinutes, setDurationMinutes] = useState(DEFAULT_DURATION_MINUTES)
   const [submitting, setSubmitting] = useState(false)
