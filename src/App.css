@@ -48,7 +48,7 @@ main {
 .card h1 {
   font-size: 32px;
   letter-spacing: -0.5px;
-  margin: 0;
+  margin: 0 0 0.5rem;
 }
 
 .book {
@@ -130,7 +130,7 @@ button:focus-visible {
   display: flex;
   align-items: stretch;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.125rem;
 }
 
 /* Title and author sit side by side and wrap onto separate lines when there isn't room. */
