@@ -76,6 +76,34 @@ button:focus-visible {
   color: var(--text-h);
 }
 
+.book-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.book-title-row,
+.book-author-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.book-author-row > span {
+  color: var(--text);
+  min-width: 1.5rem;
+}
+
+button.round {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
 .option-row {
   display: flex;
   gap: 0.5rem;

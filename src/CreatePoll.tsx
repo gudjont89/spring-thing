@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import {
   createPoll,
   DEFAULT_DURATION_MINUTES,
@@ -58,6 +58,15 @@ export function CreatePoll() {
   const [durationMinutes, setDurationMinutes] = useState(DEFAULT_DURATION_MINUTES)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const titleInputs = useRef<(HTMLInputElement | null)[]>([])
+  const focusLastTitle = useRef(false)
+
+  useEffect(() => {
+    if (focusLastTitle.current) {
+      titleInputs.current[books.length - 1]?.focus()
+      focusLastTitle.current = false
+    }
+  }, [books])
 
   const filledBooks: Book[] = books
     .map((book) => ({ title: book.title.trim(), author: book.author.trim() || null }))
@@ -72,6 +81,26 @@ export function CreatePoll() {
 
   function setBook(index: number, field: keyof typeof emptyBook, value: string) {
     setBooks(books.map((book, i) => (i === index ? { ...book, [field]: value } : book)))
+  }
+
+  function addBook() {
+    if (books.length >= MAX_BOOKS) return
+    focusLastTitle.current = true
+    setBooks([...books, emptyBook])
+  }
+
+  // The list never goes empty: removing the last book leaves a blank one in its place.
+  function removeBook(index: number) {
+    const remaining = books.filter((_, i) => i !== index)
+    setBooks(remaining.length > 0 ? remaining : [emptyBook])
+    focusLastTitle.current = remaining.length === 0
+  }
+
+  // Enter adds another book instead of submitting the form.
+  function handleBookKeyDown(event: KeyboardEvent) {
+    if (event.key !== 'Enter') return
+    event.preventDefault()
+    addBook()
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -94,37 +123,45 @@ export function CreatePoll() {
       <fieldset className="field">
         <legend>Books</legend>
         {books.map((book, index) => (
-          <div className="option-row" key={index}>
-            <input
-              value={book.title}
-              onChange={(event) => setBook(index, 'title', event.target.value)}
-              maxLength={MAX_TITLE_LENGTH}
-              placeholder={`Title ${index + 1}`}
-              aria-label={`Title of book ${index + 1}`}
-              autoFocus={index === 0}
-            />
-            <input
-              value={book.author}
-              onChange={(event) => setBook(index, 'author', event.target.value)}
-              maxLength={MAX_AUTHOR_LENGTH}
-              placeholder="Author (optional)"
-              aria-label={`Author of book ${index + 1}`}
-            />
-            {books.length > MIN_BOOKS && (
+          <div className="book-entry" key={index}>
+            <div className="book-title-row">
+              <input
+                ref={(element) => {
+                  titleInputs.current[index] = element
+                }}
+                value={book.title}
+                onChange={(event) => setBook(index, 'title', event.target.value)}
+                onKeyDown={handleBookKeyDown}
+                maxLength={MAX_TITLE_LENGTH}
+                placeholder={`Title ${index + 1}`}
+                aria-label={`Title of book ${index + 1}`}
+                autoFocus={index === 0}
+              />
               <button
                 type="button"
                 className="ghost"
-                onClick={() => setBooks(books.filter((_, i) => i !== index))}
+                onClick={() => removeBook(index)}
                 aria-label={`Remove book ${index + 1}`}
               >
                 ✕
               </button>
-            )}
+            </div>
+            <label className="book-author-row">
+              <span>by</span>
+              <input
+                value={book.author}
+                onChange={(event) => setBook(index, 'author', event.target.value)}
+                onKeyDown={handleBookKeyDown}
+                maxLength={MAX_AUTHOR_LENGTH}
+                placeholder="Author (optional)"
+                aria-label={`Author of book ${index + 1}`}
+              />
+            </label>
           </div>
         ))}
         {books.length < MAX_BOOKS && (
-          <button type="button" className="ghost" onClick={() => setBooks([...books, emptyBook])}>
-            + Add book
+          <button type="button" className="ghost round" onClick={addBook} aria-label="Add book">
+            +
           </button>
         )}
       </fieldset>
