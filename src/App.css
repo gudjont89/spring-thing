@@ -74,6 +74,18 @@ button:focus-visible {
   outline-offset: 1px;
 }
 
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stepper output {
+  min-width: 2rem;
+  text-align: center;
+  color: var(--text-h);
+}
+
 .option-row {
   display: flex;
   gap: 0.5rem;

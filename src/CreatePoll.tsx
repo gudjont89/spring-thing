@@ -18,7 +18,7 @@ const durationChoices = Array.from(
 
 export function CreatePoll() {
   const [books, setBooks] = useState([emptyBook, emptyBook])
-  const [votesPerVoter, setVotesPerVoter] = useState(1)
+  const [requestedVotes, setRequestedVotes] = useState(1)
   const [durationMinutes, setDurationMinutes] = useState(MAX_DURATION_MINUTES)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -30,8 +30,9 @@ export function CreatePoll() {
   const hasDuplicates = new Set(bookKeys).size !== bookKeys.length
   // Voting for every book would say nothing, so voters must leave at least one out.
   const maxVotesPerVoter = Math.max(1, filledBooks.length - 1)
-  const votesPerVoterValid = Number.isInteger(votesPerVoter) && votesPerVoter >= 1 && votesPerVoter <= maxVotesPerVoter
-  const canSubmit = filledBooks.length >= MIN_BOOKS && !hasDuplicates && votesPerVoterValid && !submitting
+  // Removing books can lower the maximum below what was chosen, so clamp rather than invalidate.
+  const votesPerVoter = Math.min(requestedVotes, maxVotesPerVoter)
+  const canSubmit = filledBooks.length >= MIN_BOOKS && !hasDuplicates && !submitting
 
   function setBook(index: number, field: keyof typeof emptyBook, value: string) {
     setBooks(books.map((book, i) => (i === index ? { ...book, [field]: value } : book)))
@@ -92,18 +93,30 @@ export function CreatePoll() {
         )}
       </fieldset>
 
-      <label className="field">
-        <span>Votes per person</span>
-        <input
-          type="number"
-          className="narrow"
-          value={Number.isNaN(votesPerVoter) ? '' : votesPerVoter}
-          onChange={(event) => setVotesPerVoter(event.target.valueAsNumber)}
-          min={1}
-          max={maxVotesPerVoter}
-          step={1}
-        />
-      </label>
+      <div className="field" role="group" aria-labelledby="votes-label">
+        <span id="votes-label">Votes per person</span>
+        <div className="stepper">
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => setRequestedVotes(votesPerVoter - 1)}
+            disabled={votesPerVoter <= 1}
+            aria-label="Fewer votes per person"
+          >
+            −
+          </button>
+          <output aria-live="polite">{votesPerVoter}</output>
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => setRequestedVotes(votesPerVoter + 1)}
+            disabled={votesPerVoter >= maxVotesPerVoter}
+            aria-label="More votes per person"
+          >
+            +
+          </button>
+        </div>
+      </div>
 
       <label className="field">
         <span>Voting time</span>
@@ -121,12 +134,6 @@ export function CreatePoll() {
       </label>
 
       {hasDuplicates && <p className="error">Each book can only be listed once.</p>}
-      {!votesPerVoterValid && (
-        <p className="error">
-          Votes per person must be a whole number from 1 to {maxVotesPerVoter}, so that it is fewer than the number of
-          books.
-        </p>
-      )}
       {error && <p className="error">Could not create the poll: {error}</p>}
 
       <button type="submit" disabled={!canSubmit}>
