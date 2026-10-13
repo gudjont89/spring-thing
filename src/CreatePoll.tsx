@@ -123,7 +123,6 @@ export function CreatePoll() {
       <h1>Pick the next book</h1>
 
       <fieldset className="field">
-        <legend>Books</legend>
         {books.map((book, index) => (
           <div className="book-entry" key={index}>
             <div className="book-fields">
