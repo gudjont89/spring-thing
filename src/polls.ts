@@ -128,9 +128,9 @@ export async function castVote(pollId: string, books: number[]): Promise<void> {
   })
 }
 
-export function tally(votes: Votes, bookCount: number): number[] {
+export function tally(ballots: Iterable<Ballot>, bookCount: number): number[] {
   const counts = new Array<number>(bookCount).fill(0)
-  for (const { books } of votes.values()) {
+  for (const { books } of ballots) {
     for (const book of books) {
       if (book >= 0 && book < bookCount) counts[book]++
     }

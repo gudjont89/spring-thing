@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import type { FirestoreError } from 'firebase/firestore'
 import { ensureSignedIn } from './firebase'
 import { castVote, fetchVotes, pollUrl, tally, watchPoll, watchVote, type Book, type Poll, type Votes } from './polls'
@@ -8,6 +8,9 @@ import { Button, Sketch } from './Sketch'
 // How often, and how many times, to ask for results that the server says are not available yet.
 const RESULTS_RETRY_MS = 2000
 const RESULTS_MAX_RETRIES = 10
+
+// The results replay the ballots in the order they were cast, squashed into this long.
+const REPLAY_MS = 15_000
 
 export function PollPage({ pollId }: { pollId: string }) {
   // undefined while loading, null if the poll does not exist
@@ -198,7 +201,30 @@ function BookLabel({ book }: { book: Book }) {
 }
 
 export function Results({ poll, votes, myVote }: { poll: Poll; votes: Votes; myVote: number[] | undefined }) {
-  const counts = tally(votes, poll.books.length)
+  const ballots = useMemo(
+    () => [...votes.values()].sort((a, b) => a.votedAt.getTime() - b.votedAt.getTime()),
+    [votes],
+  )
+  // How many ballots the replay has counted so far. Skip the replay for people who prefer less motion.
+  const [replayed, setReplayed] = useState(() =>
+    matchMedia('(prefers-reduced-motion: reduce)').matches ? ballots.length : 0,
+  )
+
+  useEffect(() => {
+    if (ballots.length === 0) return
+    const first = ballots[0].votedAt.getTime()
+    const span = ballots[ballots.length - 1].votedAt.getTime() - first
+    const timers = ballots.map((ballot, index) =>
+      setTimeout(
+        () => setReplayed((count) => Math.max(count, index + 1)),
+        span ? ((ballot.votedAt.getTime() - first) / span) * REPLAY_MS : 0,
+      ),
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [ballots])
+
+  const counts = tally(ballots.slice(0, replayed), poll.books.length)
+  // Bars are scaled to the final number of voters, so they grow towards their final width.
   const voterCount = votes.size
 
   return (
