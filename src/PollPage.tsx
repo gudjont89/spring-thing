@@ -224,14 +224,13 @@ export function Results({ poll, votes, myVote }: { poll: Poll; votes: Votes; myV
   }, [ballots])
 
   const counts = tally(ballots.slice(0, replayed), poll.books.length)
-  // Bars are scaled to the final number of voters, so they grow towards their final width.
-  const voterCount = votes.size
+  // Bars are scaled so the winner's final bar spans the full width; the others grow towards their share of it.
+  const maxCount = Math.max(...tally(ballots, poll.books.length))
 
   return (
     <div className="results">
       {poll.books.map((book, index) => {
-        // Share of voters who picked this book; with several votes each, these add up to more than 100%.
-        const percent = voterCount ? Math.round((counts[index] / voterCount) * 100) : 0
+        const percent = maxCount ? (counts[index] / maxCount) * 100 : 0
         return (
           <div className="result" key={index}>
             <div className="result-label">
