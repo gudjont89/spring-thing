@@ -10,7 +10,9 @@ interface Size {
 
 interface SketchProps {
   shape?: 'rectangle' | 'ellipse'
-  fill?: 'solid' | 'hachure'
+  fill?: 'solid' | 'hachure' | 'cross-hatch'
+  /** Space between fill lines, in pixels. */
+  hachureGap?: number
 }
 
 function hash(text: string) {
@@ -21,7 +23,7 @@ function hash(text: string) {
 
 // Draws a hand-drawn outline filling its host element, which must be `.sketched`.
 // Colors come from the host's --sketch-stroke / --sketch-fill so CSS state selectors can restyle it.
-export function Sketch({ shape = 'rectangle', fill }: SketchProps) {
+export function Sketch({ shape = 'rectangle', fill, hachureGap = 6 }: SketchProps) {
   const svg = useRef<SVGSVGElement>(null)
   const [size, setSize] = useState<Size>({ width: 0, height: 0 })
   // A fixed seed per element keeps the wobble from changing on every redraw.
@@ -50,7 +52,7 @@ export function Sketch({ shape = 'rectangle', fill }: SketchProps) {
         fill: 'var(--sketch-fill)',
         fillStyle: fill,
         fillWeight: 1.5,
-        hachureGap: 6,
+        hachureGap,
       }),
     }
     const inset = 2
@@ -59,7 +61,7 @@ export function Sketch({ shape = 'rectangle', fill }: SketchProps) {
         ? generator.ellipse(width / 2, height / 2, width - 2 * inset, height - 2 * inset, options)
         : generator.rectangle(inset, inset, width - 2 * inset, height - 2 * inset, options)
     return generator.toPaths(drawable)
-  }, [size, seed, shape, fill])
+  }, [size, seed, shape, fill, hachureGap])
 
   return (
     <svg ref={svg} className="sketch" aria-hidden="true">

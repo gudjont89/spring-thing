@@ -239,16 +239,13 @@ button.ghost {
 }
 
 .bar {
-  height: 0.5rem;
-  border-radius: 4px;
-  background: var(--border);
-  overflow: hidden;
+  height: 1.5rem;
 }
 
 .bar-fill {
+  --sketch-stroke: var(--accent);
+  --sketch-fill: var(--accent);
   height: 100%;
-  background: var(--accent);
-  transition: width 0.3s ease;
 }
 
 .muted {

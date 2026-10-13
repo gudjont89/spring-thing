@@ -216,7 +216,9 @@ export function Results({ poll, votes, myVote }: { poll: Poll; votes: Votes; myV
               <span>{counts[index]}</span>
             </div>
             <div className="bar">
-              <div className="bar-fill" style={{ width: `${percent}%` }} />
+              <div className="bar-fill sketched" style={{ width: `${percent}%` }}>
+                <Sketch fill="cross-hatch" hachureGap={9} />
+              </div>
             </div>
           </div>
         )
