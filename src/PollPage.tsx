@@ -80,7 +80,7 @@ export function PollPage({ pollId }: { pollId: string }) {
   if (poll === undefined) {
     return (
       <p className="card sketched">
-        <Sketch />
+        <Sketch fill="solid" />
         {error ? `Could not load the poll: ${error}` : 'Loading…'}
       </p>
     )
@@ -88,7 +88,7 @@ export function PollPage({ pollId }: { pollId: string }) {
   if (poll === null) {
     return (
       <div className="card sketched">
-        <Sketch />
+        <Sketch fill="solid" />
         <h1>Poll not found</h1>
         <p>
           Check the link, or <a href="#/">create a new poll</a>.
@@ -122,7 +122,7 @@ export function PollPage({ pollId }: { pollId: string }) {
   return (
     <>
       <section className="card sketched">
-        <Sketch />
+        <Sketch fill="solid" />
         <h1>Which book should we read next?</h1>
         {closed ? (
           <p className="badge">Voting has ended.</p>

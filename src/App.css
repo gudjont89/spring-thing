@@ -37,6 +37,8 @@ main {
 }
 
 .card {
+  --sketch-stroke: var(--card);
+  --sketch-fill: var(--card);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -89,6 +91,7 @@ select {
 
 .input-box:focus-within {
   --sketch-stroke: var(--accent);
+  --sketch-fill: #fff;
 }
 
 .input-box input {
@@ -162,7 +165,7 @@ button {
   background: transparent;
   --sketch-stroke: var(--accent);
   --sketch-fill: var(--accent);
-  color: #fff;
+  color: var(--card);
   align-self: flex-start;
 }
 
@@ -173,7 +176,7 @@ button:disabled {
 
 button.ghost {
   color: var(--accent);
-  --sketch-stroke: var(--accent-border);
+  --sketch-stroke: var(--accent);
 }
 
 .choice {
@@ -235,7 +238,7 @@ button.ghost {
 }
 
 .error {
-  color: #d33;
+  color: #9b1c1c;
 }
 
 .qr {

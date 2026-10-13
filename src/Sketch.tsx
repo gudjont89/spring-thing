@@ -89,7 +89,7 @@ export function Button({ ghost, round, className, children, ...props }: ButtonPr
 export function TextInput(props: ComponentProps<'input'>) {
   return (
     <span className="sketched input-box">
-      <Sketch />
+      <Sketch fill="solid" />
       <input {...props} />
     </span>
   )
