@@ -124,7 +124,7 @@ export function CreatePoll() {
         <legend>Books</legend>
         {books.map((book, index) => (
           <div className="book-entry" key={index}>
-            <div className="book-title-row">
+            <div className="book-fields">
               <input
                 ref={(element) => {
                   titleInputs.current[index] = element
@@ -137,26 +137,26 @@ export function CreatePoll() {
                 aria-label={`Title of book ${index + 1}`}
                 autoFocus={index === 0}
               />
-              <button
-                type="button"
-                className="ghost"
-                onClick={() => removeBook(index)}
-                aria-label={`Remove book ${index + 1}`}
-              >
-                ✕
-              </button>
+              <label className="book-author-row">
+                <span>by</span>
+                <input
+                  value={book.author}
+                  onChange={(event) => setBook(index, 'author', event.target.value)}
+                  onKeyDown={handleBookKeyDown}
+                  maxLength={MAX_AUTHOR_LENGTH}
+                  placeholder="Author (optional)"
+                  aria-label={`Author of book ${index + 1}`}
+                />
+              </label>
             </div>
-            <label className="book-author-row">
-              <span>by</span>
-              <input
-                value={book.author}
-                onChange={(event) => setBook(index, 'author', event.target.value)}
-                onKeyDown={handleBookKeyDown}
-                maxLength={MAX_AUTHOR_LENGTH}
-                placeholder="Author (optional)"
-                aria-label={`Author of book ${index + 1}`}
-              />
-            </label>
+            <button
+              type="button"
+              className="ghost"
+              onClick={() => removeBook(index)}
+              aria-label={`Remove book ${index + 1}`}
+            >
+              ✕
+            </button>
           </div>
         ))}
         {books.length < MAX_BOOKS && (
