@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { CreatePoll } from './CreatePoll'
 import { app } from './firebase'
 import { PollPage } from './PollPage'
+import { ResultsPreview } from './ResultsPreview'
 import './App.css'
 
 function subscribeToHash(onChange: () => void) {
@@ -12,6 +13,15 @@ function subscribeToHash(onChange: () => void) {
 function App() {
   const hash = useSyncExternalStore(subscribeToHash, () => location.hash)
   const pollId = /^#\/p\/([\w-]+)$/.exec(hash)?.[1]
+
+  // Results with made-up votes, for working on the results view. Left out of production builds.
+  if (import.meta.env.DEV && hash === '#/preview') {
+    return (
+      <main>
+        <ResultsPreview />
+      </main>
+    )
+  }
 
   if (!app.options.projectId) {
     return (

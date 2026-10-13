@@ -197,7 +197,7 @@ function BookLabel({ book }: { book: Book }) {
   )
 }
 
-function Results({ poll, votes, myVote }: { poll: Poll; votes: Votes; myVote: number[] | undefined }) {
+export function Results({ poll, votes, myVote }: { poll: Poll; votes: Votes; myVote: number[] | undefined }) {
   const counts = tally(votes, poll.books.length)
   const voterCount = votes.size
 
