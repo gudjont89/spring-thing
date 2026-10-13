@@ -34,8 +34,15 @@ export interface Poll {
   closesAt: Date
 }
 
-/** Maps voter uid to the indexes of the books they picked. */
-export type Votes = Map<string, number[]>
+export interface Ballot {
+  /** Indexes of the books the voter picked. */
+  books: number[]
+  /** When the voter last cast or changed their vote. */
+  votedAt: Date
+}
+
+/** Maps voter uid to their ballot. */
+export type Votes = Map<string, Ballot>
 
 export function pollUrl(pollId: string): string {
   // Hash routing, since GitHub Pages cannot rewrite unknown paths to index.html.
@@ -101,7 +108,12 @@ export function watchVote(
  */
 export async function fetchVotes(pollId: string): Promise<Votes> {
   const snapshot = await getDocs(collection(db, 'polls', pollId, 'votes'))
-  return new Map(snapshot.docs.map((vote) => [vote.id, vote.data().books]))
+  return new Map(
+    snapshot.docs.map((vote) => {
+      const data = vote.data()
+      return [vote.id, { books: data.books, votedAt: data.votedAt.toDate() }]
+    }),
+  )
 }
 
 /**
@@ -118,7 +130,7 @@ export async function castVote(pollId: string, books: number[]): Promise<void> {
 
 export function tally(votes: Votes, bookCount: number): number[] {
   const counts = new Array<number>(bookCount).fill(0)
-  for (const books of votes.values()) {
+  for (const { books } of votes.values()) {
     for (const book of books) {
       if (book >= 0 && book < bookCount) counts[book]++
     }

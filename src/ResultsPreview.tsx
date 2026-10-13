@@ -12,17 +12,18 @@ const poll: Poll = {
     { title: 'Piranesi', author: 'Susanna Clarke' },
   ],
   votesPerVoter: 2,
-  durationMinutes: 10,
+  durationMinutes: 3,
   ownerId: 'preview',
-  closesAt: new Date(0),
+  closesAt: new Date('2026-10-13T20:03:00'),
 }
 
+// Ballots cast over a few minutes, in the order they came in.
 const votes: Votes = new Map([
-  ['alice', [1, 3]],
-  ['bob', [1, 2]],
-  ['carol', [0, 1]],
-  ['dave', [3]],
-  ['erin', [1, 3]],
+  ['alice', { books: [1, 3], votedAt: new Date('2026-10-13T20:00:12') }],
+  ['bob', { books: [1, 2], votedAt: new Date('2026-10-13T20:00:47') }],
+  ['carol', { books: [0, 1], votedAt: new Date('2026-10-13T20:01:30') }],
+  ['dave', { books: [3], votedAt: new Date('2026-10-13T20:02:05') }],
+  ['erin', { books: [1, 3], votedAt: new Date('2026-10-13T20:02:51') }],
 ])
 
 export function ResultsPreview() {
