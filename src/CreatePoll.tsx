@@ -139,17 +139,14 @@ export function CreatePoll() {
                 aria-label={`Title of book ${index + 1}`}
                 autoFocus={index === 0}
               />
-              <label className="book-author-row">
-                <span>by</span>
-                <TextInput
-                  value={book.author}
-                  onChange={(event) => setBook(index, 'author', event.target.value)}
-                  onKeyDown={handleBookKeyDown}
-                  maxLength={MAX_AUTHOR_LENGTH}
-                  placeholder="Author (optional)"
-                  aria-label={`Author of book ${index + 1}`}
-                />
-              </label>
+              <TextInput
+                value={book.author}
+                onChange={(event) => setBook(index, 'author', event.target.value)}
+                onKeyDown={handleBookKeyDown}
+                maxLength={MAX_AUTHOR_LENGTH}
+                placeholder="Author (optional)"
+                aria-label={`Author of book ${index + 1}`}
+              />
             </div>
             <Button
               type="button"
