@@ -32,22 +32,20 @@ function Stepper({ label, value, min, max, onChange, format = String }: StepperP
         <Button
           type="button"
           ghost
+          icon="minus"
           onClick={() => onChange(value - 1)}
           disabled={value <= min}
           aria-label={`Decrease ${label.toLowerCase()}`}
-        >
-          −
-        </Button>
+        />
         <output aria-live="polite">{format(value)}</output>
         <Button
           type="button"
           ghost
+          icon="plus"
           onClick={() => onChange(value + 1)}
           disabled={value >= max}
           aria-label={`Increase ${label.toLowerCase()}`}
-        >
-          +
-        </Button>
+        />
       </div>
     </div>
   )
@@ -150,17 +148,14 @@ export function CreatePoll() {
             <Button
               type="button"
               ghost
+              icon="cross"
               onClick={() => removeBook(index)}
               aria-label={`Remove book ${index + 1}`}
-            >
-              ✕
-            </Button>
+            />
           </div>
         ))}
         {books.length < MAX_BOOKS && (
-          <Button type="button" ghost round onClick={addBook} aria-label="Add book">
-            +
-          </Button>
+          <Button type="button" ghost round icon="plus" onClick={addBook} aria-label="Add book" />
         )}
       </fieldset>
 

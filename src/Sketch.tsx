@@ -70,17 +70,55 @@ export function Sketch({ shape = 'rectangle', fill }: SketchProps) {
   )
 }
 
+const ICON_LINES = {
+  plus: [
+    [12, 4, 12, 20],
+    [4, 12, 20, 12],
+  ],
+  minus: [[4, 12, 20, 12]],
+  cross: [
+    [5, 5, 19, 19],
+    [19, 5, 5, 19],
+  ],
+} as const
+
+export type IconName = keyof typeof ICON_LINES
+
+// Hand-drawn glyph in the current text color, stroked like the outlines drawn by <Sketch>.
+export function Icon({ name }: { name: IconName }) {
+  const seed = hash(useId())
+  const paths = useMemo(
+    () =>
+      ICON_LINES[name].flatMap(([x1, y1, x2, y2]) =>
+        generator.toPaths(
+          generator.line(x1, y1, x2, y2, { seed, stroke: 'currentColor', strokeWidth: 1.5, roughness: 1.2 }),
+        ),
+      ),
+    [name, seed],
+  )
+  return (
+    <svg className="icon" viewBox="0 0 24 24" aria-hidden="true">
+      {paths.map((path, index) => (
+        <path key={index} d={path.d} stroke={path.stroke} strokeWidth={path.strokeWidth} fill="none" />
+      ))}
+    </svg>
+  )
+}
+
 interface ButtonProps extends ComponentProps<'button'> {
   ghost?: boolean
   round?: boolean
+  icon?: IconName
 }
 
-export function Button({ ghost, round, className, children, ...props }: ButtonProps) {
-  const classes = ['sketched', ghost && 'ghost', round && 'round', className].filter(Boolean).join(' ')
+export function Button({ ghost, round, icon, className, children, ...props }: ButtonProps) {
+  const classes = ['sketched', ghost && 'ghost', round && 'round', icon && 'icon-button', className]
+    .filter(Boolean)
+    .join(' ')
   return (
     <button {...props} className={classes}>
       <Sketch shape={round ? 'ellipse' : 'rectangle'} fill={ghost ? undefined : 'solid'} />
-      {children}
+      {icon ? <Icon name={icon} /> : children}
     </button>
   )
 }
