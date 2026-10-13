@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useId, useState, type FormEvent } from 'react'
 import {
   createPoll,
+  DEFAULT_DURATION_MINUTES,
   MAX_AUTHOR_LENGTH,
   MAX_BOOKS,
   MAX_DURATION_MINUTES,
@@ -11,15 +12,50 @@ import {
 } from './polls'
 
 const emptyBook = { title: '', author: '' }
-const durationChoices = Array.from(
-  { length: MAX_DURATION_MINUTES - MIN_DURATION_MINUTES + 1 },
-  (_, i) => MIN_DURATION_MINUTES + i,
-)
+
+interface StepperProps {
+  label: string
+  value: number
+  min: number
+  max: number
+  onChange: (value: number) => void
+  format?: (value: number) => string
+}
+
+function Stepper({ label, value, min, max, onChange, format = String }: StepperProps) {
+  const labelId = useId()
+  return (
+    <div className="field" role="group" aria-labelledby={labelId}>
+      <span id={labelId}>{label}</span>
+      <div className="stepper">
+        <button
+          type="button"
+          className="ghost"
+          onClick={() => onChange(value - 1)}
+          disabled={value <= min}
+          aria-label={`Decrease ${label.toLowerCase()}`}
+        >
+          −
+        </button>
+        <output aria-live="polite">{format(value)}</output>
+        <button
+          type="button"
+          className="ghost"
+          onClick={() => onChange(value + 1)}
+          disabled={value >= max}
+          aria-label={`Increase ${label.toLowerCase()}`}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export function CreatePoll() {
   const [books, setBooks] = useState([emptyBook, emptyBook])
   const [requestedVotes, setRequestedVotes] = useState(1)
-  const [durationMinutes, setDurationMinutes] = useState(MAX_DURATION_MINUTES)
+  const [durationMinutes, setDurationMinutes] = useState(DEFAULT_DURATION_MINUTES)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -93,45 +129,22 @@ export function CreatePoll() {
         )}
       </fieldset>
 
-      <div className="field" role="group" aria-labelledby="votes-label">
-        <span id="votes-label">Votes per person</span>
-        <div className="stepper">
-          <button
-            type="button"
-            className="ghost"
-            onClick={() => setRequestedVotes(votesPerVoter - 1)}
-            disabled={votesPerVoter <= 1}
-            aria-label="Fewer votes per person"
-          >
-            −
-          </button>
-          <output aria-live="polite">{votesPerVoter}</output>
-          <button
-            type="button"
-            className="ghost"
-            onClick={() => setRequestedVotes(votesPerVoter + 1)}
-            disabled={votesPerVoter >= maxVotesPerVoter}
-            aria-label="More votes per person"
-          >
-            +
-          </button>
-        </div>
-      </div>
+      <Stepper
+        label="Votes per person"
+        value={votesPerVoter}
+        min={1}
+        max={maxVotesPerVoter}
+        onChange={setRequestedVotes}
+      />
 
-      <label className="field">
-        <span>Voting time</span>
-        <select
-          className="narrow"
-          value={durationMinutes}
-          onChange={(event) => setDurationMinutes(Number(event.target.value))}
-        >
-          {durationChoices.map((minutes) => (
-            <option key={minutes} value={minutes}>
-              {minutes} {minutes === 1 ? 'minute' : 'minutes'}
-            </option>
-          ))}
-        </select>
-      </label>
+      <Stepper
+        label="Voting time"
+        value={durationMinutes}
+        min={MIN_DURATION_MINUTES}
+        max={MAX_DURATION_MINUTES}
+        onChange={setDurationMinutes}
+        format={(minutes) => `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`}
+      />
 
       {hasDuplicates && <p className="error">Each book can only be listed once.</p>}
       {error && <p className="error">Could not create the poll: {error}</p>}

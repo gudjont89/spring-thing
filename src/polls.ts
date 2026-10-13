@@ -16,6 +16,7 @@ export const MIN_BOOKS = 2
 export const MAX_BOOKS = 15
 export const MIN_DURATION_MINUTES = 1
 export const MAX_DURATION_MINUTES = 5
+export const DEFAULT_DURATION_MINUTES = 3
 
 export interface Book {
   title: string
