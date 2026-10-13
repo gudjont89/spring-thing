@@ -112,3 +112,7 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+a {
+  color: var(--accent-ink);
+}

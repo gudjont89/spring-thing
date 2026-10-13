@@ -123,7 +123,7 @@ export function PollPage({ pollId }: { pollId: string }) {
     <>
       <section className="card sketched">
         <Sketch />
-        <h1>Which book should we read next?</h1>
+        <h1>{closed ? 'Results' : 'Which book should we read next?'}</h1>
         {closed ? (
           <p className="badge">Voting has ended.</p>
         ) : (
@@ -200,16 +200,9 @@ function BookLabel({ book }: { book: Book }) {
 function Results({ poll, votes, myVote }: { poll: Poll; votes: Votes; myVote: number[] | undefined }) {
   const counts = tally(votes, poll.books.length)
   const voterCount = votes.size
-  const total = counts.reduce((sum, count) => sum + count, 0)
 
   return (
     <div className="results">
-      <h2>
-        Results{' '}
-        <span className="muted">
-          ({voterCount} {voterCount === 1 ? 'voter' : 'voters'}, {total} {total === 1 ? 'vote' : 'votes'})
-        </span>
-      </h2>
       {poll.books.map((book, index) => {
         // Share of voters who picked this book; with several votes each, these add up to more than 100%.
         const percent = voterCount ? Math.round((counts[index] / voterCount) * 100) : 0
@@ -217,12 +210,10 @@ function Results({ poll, votes, myVote }: { poll: Poll; votes: Votes; myVote: nu
           <div className="result" key={index}>
             <div className="result-label">
               <span>
-                <BookLabel book={book} />
+                {book.title}
                 {myVote?.includes(index) && <span className="muted"> · your vote</span>}
               </span>
-              <span>
-                {counts[index]} ({percent}%)
-              </span>
+              <span>{counts[index]}</span>
             </div>
             <div className="bar">
               <div className="bar-fill" style={{ width: `${percent}%` }} />
