@@ -3,6 +3,7 @@ import type { FirestoreError } from 'firebase/firestore'
 import { ensureSignedIn } from './firebase'
 import { castVote, fetchVotes, pollUrl, tally, watchPoll, watchVote, type Book, type Poll, type Votes } from './polls'
 import { SharePanel } from './SharePanel'
+import { BarChart } from './BarChart'
 import { Button, Sketch } from './Sketch'
 
 // How often, and how many times, to ask for results that the server says are not available yet.
@@ -228,26 +229,17 @@ export function Results({ poll, votes, myVote }: { poll: Poll; votes: Votes; myV
   const maxCount = Math.max(...tally(ballots, poll.books.length))
 
   return (
-    <div className="results">
-      {poll.books.map((book, index) => {
-        const percent = maxCount ? (counts[index] / maxCount) * 100 : 0
-        return (
-          <div className="result" key={index}>
-            <div className="result-label">
-              <span>
-                {book.title}
-                {myVote?.includes(index) && <span className="muted"> · your vote</span>}
-              </span>
-              <span>{counts[index]}</span>
-            </div>
-            <div className="bar">
-              <div className="bar-fill sketched" style={{ width: `${percent}%` }}>
-                <Sketch fill="cross-hatch" hachureGap={9} />
-              </div>
-            </div>
-          </div>
-        )
-      })}
-    </div>
+    <BarChart
+      max={maxCount}
+      bars={poll.books.map((book, index) => ({
+        label: (
+          <>
+            {book.title}
+            {myVote?.includes(index) && <span className="muted"> · your vote</span>}
+          </>
+        ),
+        value: counts[index],
+      }))}
+    />
   )
 }

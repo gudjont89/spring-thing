@@ -225,13 +225,13 @@ button.ghost {
   accent-color: var(--accent);
 }
 
-.results {
+.bar-chart {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.result-label {
+.bar-label {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
