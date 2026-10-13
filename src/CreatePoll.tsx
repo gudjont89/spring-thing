@@ -26,7 +26,7 @@ interface StepperProps {
 function Stepper({ label, value, min, max, onChange, format = String }: StepperProps) {
   const labelId = useId()
   return (
-    <div className="field" role="group" aria-labelledby={labelId}>
+    <div className="field stepper-field" role="group" aria-labelledby={labelId}>
       <span id={labelId}>{label}</span>
       <div className="stepper">
         <Button

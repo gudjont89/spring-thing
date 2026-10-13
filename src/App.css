@@ -83,6 +83,16 @@ select {
   min-width: 0;
 }
 
+.stepper-field {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stepper-field > span {
+  margin-bottom: 0;
+}
+
 .input-box {
   display: flex;
   flex: 1;
@@ -161,6 +171,10 @@ button {
   --sketch-fill: var(--accent);
   color: var(--card);
   align-self: flex-start;
+}
+
+.field > button {
+  align-self: center;
 }
 
 button:disabled {
