@@ -15,7 +15,8 @@ interface SketchProps {
   hachureGap?: number
 }
 
-function hash(text: string) {
+// A stable number for `text`, for seeding Rough so each element keeps its own wobble across redraws.
+export function hash(text: string) {
   let value = 0
   for (const char of text) value = (value * 31 + char.charCodeAt(0)) | 0
   return Math.abs(value) + 1

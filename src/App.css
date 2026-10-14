@@ -260,6 +260,12 @@ button.ghost {
   animation: bar-draw ease-out forwards;
 }
 
+.bar-border {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
 @keyframes bar-draw {
   to {
     stroke-dashoffset: 0;
