@@ -10,10 +10,11 @@ const STRIPE_GAP = 9
 const STROKE_MS = 150
 const GROWTH_MS = 2000
 
-// One change to a bar's length: starting at `at`, it pushes the bar's drawn front `stripes` further over GROWTH_MS.
+// One change to a bar's length: starting at `at`, it pushes the bar's drawn front `distance` pixels further over
+// GROWTH_MS.
 interface Push {
   at: number
-  stripes: number
+  distance: number
 }
 
 export interface Bar {
@@ -68,23 +69,26 @@ function Stripes({ fraction }: { fraction: number }) {
     [count, height],
   )
 
-  // The first `drawn` stripes are fully drawn; each push in flight moves the front over the rest. Pushes that
+  // The bar is fully drawn up to `drawn` pixels; each push in flight moves the front on from there. Pushes that
   // overlap add up, so a bar that gets several votes at once just grows faster. Shrinking skips the animation.
-  const [growth, setGrowth] = useState({ count, drawn: count, pushes: [] as Push[] })
-  if (growth.count !== count) {
+  const [growth, setGrowth] = useState({ end, drawn: end, pushes: [] as Push[] })
+  if (growth.end !== end) {
     const now = performance.now()
-    if (count < growth.count) {
-      setGrowth({ count, drawn: count, pushes: [] })
+    if (end < growth.end) {
+      setGrowth({ end, drawn: end, pushes: [] })
     } else {
       const finished = growth.pushes.filter((push) => push.at + GROWTH_MS <= now)
       setGrowth({
-        count,
-        drawn: finished.reduce((drawn, push) => drawn + push.stripes, growth.drawn),
-        pushes: [...growth.pushes.filter((push) => !finished.includes(push)), { at: now, stripes: count - growth.count }],
+        end,
+        drawn: finished.reduce((drawn, push) => drawn + push.distance, growth.drawn),
+        pushes: [...growth.pushes.filter((push) => !finished.includes(push)), { at: now, distance: end - growth.end }],
       })
     }
   }
-  const drawnBy = useMemo(() => finishTimes(growth.count, growth.drawn, growth.pushes), [growth])
+  const startsAt = useMemo(
+    () => startTimes(count, height, growth.drawn, growth.pushes),
+    [count, height, growth],
+  )
 
   // The outline: the top and bottom edges span the whole row and are clipped at the front, so their wobble doesn't
   // change as the bar grows, and the right edge moves along with the front.
@@ -104,7 +108,7 @@ function Stripes({ fraction }: { fraction: number }) {
   const rightEdge = useRef<SVGGElement>(null)
   useLayoutEffect(() => {
     const place = (now: number) => {
-      const x = Math.min(frontAt(now, growth.drawn, growth.pushes) * STRIPE_GAP, end)
+      const x = frontAt(now, growth.drawn, growth.pushes)
       stripeClip.current?.setAttribute('width', String(x))
       edgeClip.current?.setAttribute('width', String(x + 4))
       rightEdge.current?.setAttribute('transform', `translate(${x} 0)`)
@@ -121,7 +125,7 @@ function Stripes({ fraction }: { fraction: number }) {
     }
     tick(performance.now())
     return () => cancelAnimationFrame(frame)
-  }, [growth, end])
+  }, [growth])
 
   return (
     <svg ref={svg} className="bar" aria-hidden="true">
@@ -134,7 +138,7 @@ function Stripes({ fraction }: { fraction: number }) {
       </clipPath>
       <g clipPath={`url(#${stripeClipId})`}>
         {stripes.map((paths, index) => (
-          <Stripe key={index} paths={paths} drawnBy={drawnBy[index] ?? -Infinity} />
+          <Stripe key={index} paths={paths} startsAt={startsAt[index] ?? -Infinity} />
         ))}
       </g>
       {end > 0 && (
@@ -154,12 +158,12 @@ function Stripes({ fraction }: { fraction: number }) {
   )
 }
 
-// A stripe that finishes drawing at `drawnBy` (a performance.now() time). Its animation runs from when it mounted,
-// so the delay is counted from then; if a later push moves `drawnBy` earlier, the browser retimes the running
+// A stripe that starts drawing at `startsAt` (a performance.now() time). Its animation runs from when it mounted,
+// so the delay is counted from then; if a later push moves `startsAt` earlier, the browser retimes the running
 // animation to the new delay. A stripe that should already be drawn gets a delay that puts it at the end.
-function Stripe({ paths, drawnBy }: { paths: string[]; drawnBy: number }) {
+function Stripe({ paths, startsAt }: { paths: string[]; startsAt: number }) {
   const [mountedAt] = useState(() => performance.now())
-  const delay = Math.max(drawnBy - STROKE_MS - mountedAt, -STROKE_MS)
+  const delay = Math.max(startsAt - mountedAt, -STROKE_MS)
   return paths.map((d, index) => (
     <path
       key={index}
@@ -171,27 +175,37 @@ function Stripe({ paths, drawnBy }: { paths: string[]; drawnBy: number }) {
   ))
 }
 
-// How far the front has got at `now`, in stripes, pushed along by `pushes` from `drawn`.
+// How far the front has got at `now`, in pixels, pushed along by `pushes` from `drawn`.
 function frontAt(now: number, drawn: number, pushes: Push[]): number {
-  return pushes.reduce((front, push) => front + push.stripes * Math.min(Math.max((now - push.at) / GROWTH_MS, 0), 1), drawn)
+  return pushes.reduce(
+    (front, push) => front + push.distance * Math.min(Math.max((now - push.at) / GROWTH_MS, 0), 1),
+    drawn,
+  )
 }
 
-// When each of the first `count` stripes finishes drawing: the moment the front, pushed along by `pushes` from
-// `drawn`, reaches the stripe's end. Stripes before `drawn` are already drawn, at -Infinity.
-function finishTimes(count: number, drawn: number, pushes: Push[]): number[] {
-  const times = Array.from({ length: count }, () => -Infinity)
+// When each of the first `count` stripes starts drawing: the moment the front, pushed along by `pushes` from
+// `drawn`, reaches the stripe's bottom end. Starting there keeps the bar filled right up to the front; the stripe's
+// tip runs ahead of it and is clipped. Stripes the front had already passed at `drawn` are drawn, at -Infinity.
+function startTimes(count: number, height: number, drawn: number, pushes: Push[]): number[] {
+  // Stripe k's bottom end; stripes exist only for bottom ends left of the bar's end, so before a bar has any length
+  // there are none, and the ones that start left of the bar are new rather than drawn.
+  const reach = (stripe: number) => (stripe + 1) * STRIPE_GAP - height
+  const times = Array.from({ length: count }, (_, stripe) => (drawn > 0 && reach(stripe) < drawn ? -Infinity : NaN))
   // Between consecutive push starts and ends the front moves at a constant speed.
   const breaks = pushes.flatMap((push) => [push.at, push.at + GROWTH_MS]).sort((a, b) => a - b)
   let front = drawn
-  let stripe = drawn
+  let stripe = times.findIndex(Number.isNaN)
+  if (stripe < 0) return times
   for (let i = 0; i + 1 < breaks.length && stripe < count; i++) {
     const [start, end] = [breaks[i], breaks[i + 1]]
     const speed = pushes
       .filter((push) => push.at <= start && end <= push.at + GROWTH_MS)
-      .reduce((sum, push) => sum + push.stripes / GROWTH_MS, 0)
+      .reduce((sum, push) => sum + push.distance / GROWTH_MS, 0)
     const next = front + speed * (end - start)
     // The small allowance keeps rounding from leaving the last stripe of a push unscheduled.
-    for (; stripe < count && stripe + 1 <= next + 1e-6; stripe++) times[stripe] = start + (stripe + 1 - front) / speed
+    for (; stripe < count && reach(stripe) <= next + 1e-6; stripe++) {
+      times[stripe] = start + Math.max(0, reach(stripe) - front) / speed
+    }
     front = next
   }
   for (; stripe < count; stripe++) times[stripe] = breaks[breaks.length - 1] ?? -Infinity

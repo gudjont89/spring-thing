@@ -24,7 +24,11 @@ const votes: Votes = new Map([
   ['carol', { books: [0, 1], votedAt: new Date('2026-10-13T20:01:30') }],
   ['dave', { books: [3], votedAt: new Date('2026-10-13T20:02:05') }],
   ['erin', { books: [1, 3], votedAt: new Date('2026-10-13T20:02:51') }],
-  ['frank', { books: [0, 2], votedAt: new Date('2026-10-13T20:01:40') }]
+  ['frank', { books: [0, 2], votedAt: new Date('2026-10-13T20:01:40') }],
+  ['grace', { books: [2, 3], votedAt: new Date('2026-10-13T20:00:25') }],
+  ['heidi', { books: [2], votedAt: new Date('2026-10-13T20:01:33') }],
+  ['ivan', { books: [0, 1], votedAt: new Date('2026-10-13T20:02:20') }],
+  ['judy', { books: [1, 2], votedAt: new Date('2026-10-13T20:02:40') }],
 ])
 
 export function ResultsPreview() {
