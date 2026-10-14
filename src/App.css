@@ -280,7 +280,7 @@ button.ghost {
   height: var(--avatar-size);
   color: var(--text-h);
   line-height: 1;
-  animation: avatar-show 150ms ease-out 300ms backwards;
+  animation: avatar-show 200ms ease-out 300ms backwards;
 }
 
 @keyframes avatar-show {
@@ -289,9 +289,20 @@ button.ghost {
   }
 }
 
+/* Avatars.tsx removes the avatar once this has finished, so it must run even with reduced motion. */
+.avatar.leaving {
+  animation: avatar-hide 200ms ease-in forwards;
+}
+
+@keyframes avatar-hide {
+  to {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .avatar-slot,
-  .avatar {
+  .avatar:not(.leaving) {
     animation: none;
   }
 }
