@@ -239,13 +239,37 @@ button.ghost {
 }
 
 .bar {
+  display: block;
+  width: 100%;
   height: 1.5rem;
+  overflow: visible;
 }
 
-.bar-fill {
-  --sketch-stroke: var(--accent);
-  --sketch-fill: var(--accent);
-  height: 100%;
+/*
+ * Each stroke is drawn in like a pen line; pathLength="1" lets one dash cover any stroke.
+ * Until it draws, the stroke sits well inside the gap: lining it up exactly with the dash's ends
+ * leaves anti-aliased dots there.
+ */
+.bar-stroke {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1.1;
+  animation: bar-draw 150ms ease-out forwards;
+}
+
+@keyframes bar-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-stroke {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
 }
 
 .muted {
