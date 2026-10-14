@@ -223,8 +223,8 @@ button.ghost {
   --sketch-fill: var(--accent-border);
 }
 
-.choice input {
-  accent-color: var(--accent);
+.choice:has(input:focus-visible) .sketch path {
+  stroke-width: 2.5;
 }
 
 .results-heading {

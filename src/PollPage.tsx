@@ -158,8 +158,10 @@ export function PollPage({ pollId }: { pollId: string }) {
                 return (
                   <label className="choice sketched" key={index}>
                     <Sketch fill="hachure" />
+                    {/* The box's fill shows whether it is picked; the checkbox stays for keyboards and screen readers. */}
                     <input
                       type="checkbox"
+                      className="visually-hidden"
                       checked={checked}
                       disabled={!checked && choice.length >= poll.votesPerVoter}
                       onChange={() => toggle(index)}
