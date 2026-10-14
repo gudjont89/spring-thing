@@ -3,9 +3,17 @@ import rough from 'roughjs'
 
 const generator = rough.generator()
 
-// Horizontal distance between stripes, and how far apart new stripes start drawing.
+// Horizontal distance between stripes.
 const STRIPE_GAP = 9
-const STAGGER_MS = 25
+// How long one stripe takes to draw, and how long one change to a bar's length takes to draw in.
+const STROKE_MS = 150
+const GROWTH_MS = 2000
+
+// One change to a bar's length: starting at `at`, it pushes the bar's drawn front `stripes` further over GROWTH_MS.
+interface Push {
+  at: number
+  stripes: number
+}
 
 export interface Bar {
   label: ReactNode
@@ -57,9 +65,23 @@ function Stripes({ fraction }: { fraction: number }) {
     [count, height],
   )
 
-  // Remember how many stripes there were before the latest change, so new ones are staggered from the first new one.
-  const [growth, setGrowth] = useState({ from: 0, to: count })
-  if (growth.to !== count) setGrowth({ from: growth.to, to: count })
+  // The first `drawn` stripes are fully drawn; each push in flight moves the front over the rest. Pushes that
+  // overlap add up, so a bar that gets several votes at once just grows faster. Shrinking skips the animation.
+  const [growth, setGrowth] = useState({ count, drawn: count, pushes: [] as Push[] })
+  if (growth.count !== count) {
+    const now = performance.now()
+    if (count < growth.count) {
+      setGrowth({ count, drawn: count, pushes: [] })
+    } else {
+      const finished = growth.pushes.filter((push) => push.at + GROWTH_MS <= now)
+      setGrowth({
+        count,
+        drawn: finished.reduce((drawn, push) => drawn + push.stripes, growth.drawn),
+        pushes: [...growth.pushes.filter((push) => !finished.includes(push)), { at: now, stripes: count - growth.count }],
+      })
+    }
+  }
+  const drawnBy = useMemo(() => finishTimes(growth.count, growth.drawn, growth.pushes), [growth])
 
   return (
     <svg ref={svg} className="bar" aria-hidden="true">
@@ -69,19 +91,50 @@ function Stripes({ fraction }: { fraction: number }) {
       </clipPath>
       <g clipPath={`url(#${clipId})`}>
         {stripes.map((paths, index) => (
-          <Stripe key={index} paths={paths} delay={Math.max(0, index - growth.from) * STAGGER_MS} />
+          <Stripe key={index} paths={paths} drawnBy={drawnBy[index] ?? -Infinity} />
         ))}
       </g>
     </svg>
   )
 }
 
-function Stripe({ paths, delay }: { paths: string[]; delay: number }) {
-  // Keep the delay from when this stripe first appeared, so later renders don't replay its animation.
-  const [initialDelay] = useState(delay)
+// A stripe that finishes drawing at `drawnBy` (a performance.now() time). Its animation runs from when it mounted,
+// so the delay is counted from then; if a later push moves `drawnBy` earlier, the browser retimes the running
+// animation to the new delay. A stripe that should already be drawn gets a delay that puts it at the end.
+function Stripe({ paths, drawnBy }: { paths: string[]; drawnBy: number }) {
+  const [mountedAt] = useState(() => performance.now())
+  const delay = Math.max(drawnBy - STROKE_MS - mountedAt, -STROKE_MS)
   return paths.map((d, index) => (
-    <path key={index} d={d} pathLength={1} className="bar-stroke" style={{ animationDelay: `${initialDelay}ms` }} />
+    <path
+      key={index}
+      d={d}
+      pathLength={1}
+      className="bar-stroke"
+      style={{ animationDuration: `${STROKE_MS}ms`, animationDelay: `${delay}ms` }}
+    />
   ))
+}
+
+// When each of the first `count` stripes finishes drawing: the moment the front, pushed along by `pushes` from
+// `drawn`, reaches the stripe's end. Stripes before `drawn` are already drawn, at -Infinity.
+function finishTimes(count: number, drawn: number, pushes: Push[]): number[] {
+  const times = Array.from({ length: count }, () => -Infinity)
+  // Between consecutive push starts and ends the front moves at a constant speed.
+  const breaks = pushes.flatMap((push) => [push.at, push.at + GROWTH_MS]).sort((a, b) => a - b)
+  let front = drawn
+  let stripe = drawn
+  for (let i = 0; i + 1 < breaks.length && stripe < count; i++) {
+    const [start, end] = [breaks[i], breaks[i + 1]]
+    const speed = pushes
+      .filter((push) => push.at <= start && end <= push.at + GROWTH_MS)
+      .reduce((sum, push) => sum + push.stripes / GROWTH_MS, 0)
+    const next = front + speed * (end - start)
+    // The small allowance keeps rounding from leaving the last stripe of a push unscheduled.
+    for (; stripe < count && stripe + 1 <= next + 1e-6; stripe++) times[stripe] = start + (stripe + 1 - front) / speed
+    front = next
+  }
+  for (; stripe < count; stripe++) times[stripe] = breaks[breaks.length - 1] ?? -Infinity
+  return times
 }
 
 // The two crossing 45° lines of stripe `index`, spanning `height` across from where it starts.

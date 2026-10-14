@@ -10,8 +10,10 @@ import { Button, Sketch } from './Sketch'
 const RESULTS_RETRY_MS = 2000
 const RESULTS_MAX_RETRIES = 10
 
-// The results replay the ballots in the order they were cast, squashed into this long.
-const REPLAY_MS = 15_000
+// The results replay the ballots in the order they were cast, the first counted at REPLAY_START_MS and the last at
+// REPLAY_END_MS, with the ones in between keeping their relative spacing.
+const REPLAY_START_MS = 1000
+const REPLAY_END_MS = 13_000
 
 export function PollPage({ pollId }: { pollId: string }) {
   // undefined while loading, null if the poll does not exist
@@ -218,7 +220,7 @@ export function Results({ poll, votes, myVote }: { poll: Poll; votes: Votes; myV
     const timers = ballots.map((ballot, index) =>
       setTimeout(
         () => setReplayed((count) => Math.max(count, index + 1)),
-        span ? ((ballot.votedAt.getTime() - first) / span) * REPLAY_MS : 0,
+        REPLAY_START_MS + (span ? ((ballot.votedAt.getTime() - first) / span) * (REPLAY_END_MS - REPLAY_START_MS) : 0),
       ),
     )
     return () => timers.forEach(clearTimeout)

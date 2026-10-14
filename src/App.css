@@ -256,7 +256,8 @@ button.ghost {
   stroke-width: 1.5;
   stroke-dasharray: 1 2;
   stroke-dashoffset: 1.1;
-  animation: bar-draw 150ms ease-out forwards;
+  /* Duration and delay are set per stripe in BarChart.tsx. */
+  animation: bar-draw ease-out forwards;
 }
 
 @keyframes bar-draw {
