@@ -10,6 +10,10 @@ const poll: Poll = {
     { title: 'Beloved', author: 'Toni Morrison' },
     { title: 'East of Eden', author: 'John Steinbeck' },
     { title: 'Piranesi', author: 'Susanna Clarke' },
+    { title: 'Middlemarch', author: 'George Eliot' },
+    { title: 'The Remains of the Day', author: 'Kazuo Ishiguro' },
+    { title: 'The Brief Wondrous Life of Oscar Wao', author: 'Junot Díaz' },
+    { title: 'Stoner', author: 'John Williams' },
   ],
   votesPerVoter: 2,
   durationMinutes: 3,
@@ -29,6 +33,10 @@ const votes: Votes = new Map([
   ['heidi', { name: 'Heidi', books: [2], votedAt: new Date('2026-10-13T20:01:33') }],
   ['ivan', { name: 'Ivan', books: [0, 1], votedAt: new Date('2026-10-13T20:02:20') }],
   ['judy', { name: 'Judy', books: [1, 2], votedAt: new Date('2026-10-13T20:02:40') }],
+  ['kate', { name: 'Kate', books: [4, 5], votedAt: new Date('2026-10-13T20:01:31') }],
+  ['leo', { name: 'Leo', books: [5, 6], votedAt: new Date('2026-10-13T20:01:35') }],
+  ['mallory', { name: 'Mallory', books: [4, 7], votedAt: new Date('2026-10-13T20:01:37') }],
+  ['nina', { name: 'Nina', books: [5], votedAt: new Date('2026-10-13T20:01:38') }],
 ])
 
 export function ResultsPreview() {
