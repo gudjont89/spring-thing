@@ -170,11 +170,6 @@ button.round {
   align-self: stretch;
 }
 
-.option-row {
-  display: flex;
-  gap: 0.5rem;
-}
-
 button {
   font: inherit;
   cursor: pointer;

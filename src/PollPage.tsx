@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import type { FirestoreError } from 'firebase/firestore'
 import { ensureSignedIn } from './firebase'
 import { castVote, fetchVotes, pollUrl, tally, watchPoll, watchVote, type Book, type Poll, type Votes } from './polls'
-import { QrCode, SharePanel } from './SharePanel'
+import { QrCode } from './QrCode'
 import { Avatars } from './Avatars'
 import { BarChart, GROWTH_MS } from './BarChart'
 import { Button, Sketch } from './Sketch'
@@ -181,8 +181,6 @@ export function PollPage({ pollId }: { pollId: string }) {
 
         {error && <p className="error">{error}</p>}
       </section>
-
-      {!closed && !isCreator && <SharePanel url={pollUrl(pollId)} />}
 
       <p>
         <a href="#/">Create your own poll</a>
