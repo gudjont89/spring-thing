@@ -24,7 +24,7 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
 
       // Vote documents are keyed by the voter's uid, so each browser has one ballot.
-      // A ballot lists distinct book indexes, at most votesPerVoter of them.
+      // A ballot lists distinct book indexes, at most votesPerVoter of them. The poll's creator cannot vote.
       match /votes/{voterId} {
         function poll() {
           return get(/databases/$(database)/documents/polls/$(pollId)).data;
@@ -41,6 +41,7 @@ service cloud.firestore {
 
         allow create, update: if request.auth != null
           && request.auth.uid == voterId
+          && request.auth.uid != poll().ownerId
           && request.time < deadline()
           && request.resource.data.keys().hasOnly(['books', 'votedAt'])
           && request.resource.data.books is list

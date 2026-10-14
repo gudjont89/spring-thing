@@ -3,18 +3,7 @@ import { useEffect, useState } from 'react'
 import { Button, Sketch, TextInput } from './Sketch'
 
 export function SharePanel({ url }: { url: string }) {
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    QRCode.toDataURL(url, { margin: 1, width: 480 }).then((dataUrl) => {
-      if (!cancelled) setQrDataUrl(dataUrl)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [url])
 
   async function copy() {
     await navigator.clipboard.writeText(url)
@@ -33,7 +22,23 @@ export function SharePanel({ url }: { url: string }) {
           {copied ? 'Copied!' : 'Copy'}
         </Button>
       </div>
-      {qrDataUrl && <img className="qr" src={qrDataUrl} alt="QR code linking to this poll" />}
+      <QrCode url={url} />
     </section>
   )
+}
+
+export function QrCode({ url }: { url: string }) {
+  const [dataUrl, setDataUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    QRCode.toDataURL(url, { margin: 1, width: 480 }).then((dataUrl) => {
+      if (!cancelled) setDataUrl(dataUrl)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [url])
+
+  return dataUrl && <img className="qr" src={dataUrl} alt="QR code linking to this poll" />
 }

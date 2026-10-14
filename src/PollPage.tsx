@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import type { FirestoreError } from 'firebase/firestore'
 import { ensureSignedIn } from './firebase'
 import { castVote, fetchVotes, pollUrl, tally, watchPoll, watchVote, type Book, type Poll, type Votes } from './polls'
-import { SharePanel } from './SharePanel'
+import { QrCode, SharePanel } from './SharePanel'
 import { Avatars } from './Avatars'
 import { BarChart, GROWTH_MS } from './BarChart'
 import { Button, Sketch } from './Sketch'
@@ -104,6 +104,7 @@ export function PollPage({ pollId }: { pollId: string }) {
     )
   }
 
+  const isCreator = uid === poll.ownerId
   const choice = selected ?? myVote ?? []
   const choiceUnchanged = myVote !== undefined && sameBooks(choice, myVote)
 
@@ -145,7 +146,9 @@ export function PollPage({ pollId }: { pollId: string }) {
           </>
         )}
 
-        {!closed && (
+        {!closed && isCreator && <QrCode url={pollUrl(pollId)} />}
+
+        {!closed && !isCreator && (
           <form onSubmit={handleVote}>
             <fieldset className="field">
               <legend>
@@ -176,7 +179,7 @@ export function PollPage({ pollId }: { pollId: string }) {
           </form>
         )}
 
-        {!closed && myVote !== undefined && (
+        {!closed && !isCreator && myVote !== undefined && (
           <p className="muted">Thanks for voting. Results will be shown when voting ends.</p>
         )}
 
@@ -185,7 +188,7 @@ export function PollPage({ pollId }: { pollId: string }) {
         {closed && !results && !error && <p>Counting votes…</p>}
       </section>
 
-      {!closed && <SharePanel url={pollUrl(pollId)} />}
+      {!closed && !isCreator && <SharePanel url={pollUrl(pollId)} />}
 
       <p>
         <a href="#/">Create your own poll</a>

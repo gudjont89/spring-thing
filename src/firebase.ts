@@ -20,7 +20,7 @@ export const db = getFirestore(app)
 let signingIn: Promise<User> | undefined
 
 // Visitors never see a login: each browser gets a silent anonymous account,
-// which lets Security Rules allow one vote per browser and only let a poll's creator close it.
+// which lets Security Rules allow one vote per browser and keep a poll's creator from voting in it.
 export function ensureSignedIn(): Promise<User> {
   signingIn ??= auth.authStateReady().then(async () => {
     if (auth.currentUser) return auth.currentUser
