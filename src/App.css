@@ -237,7 +237,7 @@ button.ghost {
 }
 
 .avatars {
-  --avatar-size: 2rem;
+  --avatar-size: 2.5rem;
   --avatar-gap: 0.25rem;
   flex: 1;
   min-width: 0;
