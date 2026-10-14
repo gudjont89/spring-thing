@@ -253,19 +253,21 @@ button.ghost {
   color: var(--text);
 }
 
-/* Each slot is an avatar plus the gap before it; the avatar sits at its right edge, so it shows up in place. */
+/*
+ * Each slot is an avatar plus the gap before it. A new slot grows from nothing, sliding the avatars before it to the
+ * left; the avatar sits at the slot's right edge and only shows once they are out of its way.
+ */
 .avatar-slot {
   display: flex;
   justify-content: flex-end;
   width: calc(var(--avatar-size) + var(--avatar-gap));
   flex: none;
-  animation: avatar-in 300ms ease-out;
+  animation: avatar-make-room 300ms ease-out;
 }
 
-@keyframes avatar-in {
+@keyframes avatar-make-room {
   from {
     width: 0;
-    opacity: 0;
   }
 }
 
@@ -278,10 +280,18 @@ button.ghost {
   height: var(--avatar-size);
   color: var(--text-h);
   line-height: 1;
+  animation: avatar-show 150ms ease-out 300ms backwards;
+}
+
+@keyframes avatar-show {
+  from {
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .avatar-slot {
+  .avatar-slot,
+  .avatar {
     animation: none;
   }
 }
