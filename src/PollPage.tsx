@@ -274,6 +274,8 @@ export function Results({
       {children}
       <BarChart
         max={maxCount}
+        // The counts only show once every ballot has been drawn.
+        showValues={replay.finished === ballots.length}
         bars={poll.books.map((book, index) => ({
           label: (
             <>

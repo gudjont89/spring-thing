@@ -333,7 +333,7 @@ button.ghost {
   transition: opacity ease-in-out;
 }
 
-.bar-value.fading {
+.bar-value.hidden {
   opacity: 0;
 }
 
