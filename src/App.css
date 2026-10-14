@@ -197,6 +197,13 @@ button.ghost {
   --sketch-stroke: var(--accent-border);
 }
 
+/* The Vote button sits as far below the last book as the books sit from each other. */
+.vote-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .choice {
   display: flex;
   align-items: center;

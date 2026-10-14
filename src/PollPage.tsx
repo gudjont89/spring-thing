@@ -145,7 +145,7 @@ export function PollPage({ pollId }: { pollId: string }) {
         {!closed && isCreator && <QrCode url={pollUrl(pollId)} />}
 
         {!closed && !isCreator && (
-          <form onSubmit={handleVote}>
+          <form className="vote-form" onSubmit={handleVote}>
             <fieldset className="field">
               <legend>
                 {poll.votesPerVoter === 1 ? 'Pick one book.' : `Pick up to ${poll.votesPerVoter} books.`}{' '}
