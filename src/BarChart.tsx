@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import rough from 'roughjs'
 import { hash } from './Sketch'
 
@@ -9,6 +9,8 @@ const STRIPE_GAP = 9
 // How long one stripe takes to draw, and how long one change to a bar's length takes to draw in.
 const STROKE_MS = 150
 export const GROWTH_MS = 2000
+// How long a changed value takes to fade out, and then the new one to fade in.
+const VALUE_FADE_MS = 200
 
 // One change to a bar's length: starting at `at`, it pushes the bar's drawn front `distance` pixels further over
 // GROWTH_MS.
@@ -22,20 +24,37 @@ export interface Bar {
   value: number
 }
 
-// Hand-drawn horizontal bars, each labelled with its value. A bar at `max` spans the full width.
+// Hand-drawn horizontal bars, each with its label above and its value to the right. A bar at `max` spans the full
+// width left of the values.
 export function BarChart({ bars, max }: { bars: Bar[]; max: number }) {
   return (
     <div className="bar-chart">
       {bars.map((bar, index) => (
-        <div key={index}>
-          <div className="bar-label">
-            <span>{bar.label}</span>
-            <span>{bar.value}</span>
-          </div>
+        <div key={index} className="bar-row">
+          <span className="bar-label">{bar.label}</span>
           <Stripes fraction={max ? bar.value / max : 0} />
+          <BarValue value={bar.value} />
         </div>
       ))}
     </div>
+  )
+}
+
+// When the value changes, the old one fades out and the new one then fades in.
+function BarValue({ value }: { value: number }) {
+  const [shown, setShown] = useState(value)
+  useEffect(() => {
+    if (value === shown) return
+    const timer = setTimeout(() => setShown(value), VALUE_FADE_MS)
+    return () => clearTimeout(timer)
+  }, [value, shown])
+  return (
+    <span
+      className={value === shown ? 'bar-value' : 'bar-value fading'}
+      style={{ transitionDuration: `${VALUE_FADE_MS}ms` }}
+    >
+      {shown}
+    </span>
   )
 }
 

@@ -302,11 +302,45 @@ button.ghost {
   gap: 0.75rem;
 }
 
+/* The label sits above the bar, and the value spans both of them on the right. */
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 0.5rem;
+}
+
+.bar-label,
+.bar-row .bar {
+  grid-column: 1;
+}
+
 .bar-label {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
   color: var(--text-h);
+}
+
+/* Wide enough for two digits with some room to spare, so every bar ends at the same place. */
+.bar-value {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 2.5ch;
+  font-size: 2.25rem;
+  line-height: 1;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-h);
+  /* The duration is set in BarChart.tsx. */
+  transition: opacity ease-in-out;
+}
+
+.bar-value.fading {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-value {
+    transition: none;
+  }
 }
 
 .bar {

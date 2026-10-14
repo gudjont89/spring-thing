@@ -260,13 +260,14 @@ export function Results({
   )
   // Bars are scaled so the winner's final bar spans the full width; the others grow towards their share of it.
   const maxCount = Math.max(...tally(votes.values(), poll.books.length))
+  const drawing = ballots.slice(replay.finished, replay.started)
 
   return (
     <>
       <div className="results-heading">
         <h1>Results</h1>
         <Avatars
-          voters={ballots.slice(replay.finished, replay.started).map(([uid, ballot]) => ({ id: uid, name: ballot.name }))}
+          voters={drawing.map(([uid, ballot]) => ({ id: uid, name: ballot.name }))}
         />
       </div>
       {children}
