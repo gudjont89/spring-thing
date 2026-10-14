@@ -211,6 +211,8 @@ button.ghost {
   padding: 0.75rem;
   cursor: pointer;
   color: var(--text-h);
+  /* The fill already shows the tap; mobile browsers would otherwise flash a tint over the box. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .choice:has(input:disabled) {
