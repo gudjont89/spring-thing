@@ -11,10 +11,10 @@ import { Button, Sketch } from './Sketch'
 const RESULTS_RETRY_MS = 2000
 const RESULTS_MAX_RETRIES = 10
 
-// The results replay the ballots in the order they were cast, the first counted at REPLAY_START_MS and the last at
-// REPLAY_END_MS, with the ones in between keeping their relative spacing.
+// The results replay the ballots in the order they were cast, keeping their relative spacing: the first is counted at
+// REPLAY_START_MS, and the last REPLAY_SPACING_MS per ballot after it, i.e. 2(n - 1) seconds for n ballots.
 const REPLAY_START_MS = 1000
-const REPLAY_END_MS = 13_000
+const REPLAY_SPACING_MS = 2000
 
 export function PollPage({ pollId }: { pollId: string }) {
   // undefined while loading, null if the poll does not exist
@@ -240,9 +240,10 @@ export function Results({
     if (ballots.length === 0) return
     const first = ballots[0][1].votedAt.getTime()
     const span = ballots[ballots.length - 1][1].votedAt.getTime() - first
+    const replaySpan = (ballots.length - 1) * REPLAY_SPACING_MS
     const timers = ballots.flatMap(([, ballot], index) => {
       const at =
-        REPLAY_START_MS + (span ? ((ballot.votedAt.getTime() - first) / span) * (REPLAY_END_MS - REPLAY_START_MS) : 0)
+        REPLAY_START_MS + (span ? ((ballot.votedAt.getTime() - first) / span) * replaySpan : 0)
       return [
         setTimeout(() => setReplay((replay) => ({ ...replay, started: Math.max(replay.started, index + 1) })), at),
         setTimeout(

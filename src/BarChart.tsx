@@ -8,7 +8,7 @@ const generator = rough.generator()
 const STRIPE_GAP = 9
 // How long one stripe takes to draw, and how long one change to a bar's length takes to draw in.
 const STROKE_MS = 150
-export const GROWTH_MS = 2000
+export const GROWTH_MS = 3000
 // How long a changed value takes to fade out, and then the new one to fade in.
 const VALUE_FADE_MS = 200
 
