@@ -131,18 +131,14 @@ export function PollPage({ pollId }: { pollId: string }) {
     <>
       <section className="card sketched">
         <Sketch />
-        {closed && results ? (
+        {closed ? (
           <Results poll={poll} votes={results} myVote={myVote}>
-            <p className="badge">Voting has ended.</p>
+            <p className="badge">{results || error ? 'Voting has ended.' : 'Counting votes…'}</p>
           </Results>
         ) : (
           <>
-            <h1>{closed ? 'Results' : 'Which book should we read next?'}</h1>
-            {closed ? (
-              <p className="badge">Voting has ended.</p>
-            ) : (
-              <p className="badge">Voting ends in {formatRemaining(poll.closesAt.getTime() - now)}.</p>
-            )}
+            <h1>Which book should we read next?</h1>
+            <p className="badge">Voting ends in {formatRemaining(poll.closesAt.getTime() - now)}.</p>
           </>
         )}
 
@@ -184,8 +180,6 @@ export function PollPage({ pollId }: { pollId: string }) {
         )}
 
         {error && <p className="error">{error}</p>}
-
-        {closed && !results && !error && <p>Counting votes…</p>}
       </section>
 
       {!closed && !isCreator && <SharePanel url={pollUrl(pollId)} />}
@@ -216,6 +210,7 @@ function BookLabel({ book }: { book: Book }) {
 }
 
 // The results heading, with avatars of the voters whose ballots are being drawn, then `children`, then the bars.
+// While `votes` is null the bars are empty, so the layout keeps its size when the ballots arrive.
 export function Results({
   poll,
   votes,
@@ -223,21 +218,28 @@ export function Results({
   children,
 }: {
   poll: Poll
-  votes: Votes
+  votes: Votes | null
   myVote: number[] | undefined
   children?: ReactNode
 }) {
   const ballots = useMemo(
-    () => [...votes].sort(([, a], [, b]) => a.votedAt.getTime() - b.votedAt.getTime()),
+    () => [...(votes ?? [])].sort(([, a], [, b]) => a.votedAt.getTime() - b.votedAt.getTime()),
     [votes],
   )
   // How many ballots the replay has started counting, and how many of those have finished drawing. Every ballot
   // takes GROWTH_MS to draw, so they finish in the order they started. Skip the replay for people who prefer less
   // motion.
-  const [replay, setReplay] = useState(() => {
+  const startReplay = () => {
     const skip = matchMedia('(prefers-reduced-motion: reduce)').matches ? ballots.length : 0
     return { started: skip, finished: skip }
-  })
+  }
+  const [replay, setReplay] = useState(startReplay)
+  // Start over when the ballots arrive.
+  const [replayedBallots, setReplayedBallots] = useState(ballots)
+  if (replayedBallots !== ballots) {
+    setReplayedBallots(ballots)
+    setReplay(startReplay())
+  }
 
   useEffect(() => {
     if (ballots.length === 0) return
@@ -263,7 +265,7 @@ export function Results({
     poll.books.length,
   )
   // Bars are scaled so the winner's final bar spans the full width; the others grow towards their share of it.
-  const maxCount = Math.max(...tally(votes.values(), poll.books.length))
+  const maxCount = Math.max(...tally(ballots.map(([, ballot]) => ballot), poll.books.length))
   const drawing = ballots.slice(replay.finished, replay.started)
 
   return (
@@ -278,7 +280,7 @@ export function Results({
       <BarChart
         max={maxCount}
         // The counts only show once every ballot has been drawn.
-        showValues={replay.finished === ballots.length}
+        showValues={votes !== null && replay.finished === ballots.length}
         bars={poll.books.map((book, index) => ({
           label: (
             <>
