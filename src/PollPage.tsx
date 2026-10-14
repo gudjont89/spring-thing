@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import type { FirestoreError } from 'firebase/firestore'
 import { ensureSignedIn } from './firebase'
 import { castVote, fetchVotes, pollUrl, tally, watchPoll, watchVote, type Book, type Poll, type Votes } from './polls'
 import { SharePanel } from './SharePanel'
-import { BarChart } from './BarChart'
+import { Avatars } from './Avatars'
+import { BarChart, GROWTH_MS } from './BarChart'
 import { Button, Sketch } from './Sketch'
 
 // How often, and how many times, to ask for results that the server says are not available yet.
@@ -129,11 +130,19 @@ export function PollPage({ pollId }: { pollId: string }) {
     <>
       <section className="card sketched">
         <Sketch />
-        <h1>{closed ? 'Results' : 'Which book should we read next?'}</h1>
-        {closed ? (
-          <p className="badge">Voting has ended.</p>
+        {closed && results ? (
+          <Results poll={poll} votes={results} myVote={myVote}>
+            <p className="badge">Voting has ended.</p>
+          </Results>
         ) : (
-          <p className="badge">Voting ends in {formatRemaining(poll.closesAt.getTime() - now)}.</p>
+          <>
+            <h1>{closed ? 'Results' : 'Which book should we read next?'}</h1>
+            {closed ? (
+              <p className="badge">Voting has ended.</p>
+            ) : (
+              <p className="badge">Voting ends in {formatRemaining(poll.closesAt.getTime() - now)}.</p>
+            )}
+          </>
         )}
 
         {!closed && (
@@ -173,7 +182,7 @@ export function PollPage({ pollId }: { pollId: string }) {
 
         {error && <p className="error">{error}</p>}
 
-        {closed && (results ? <Results poll={poll} votes={results} myVote={myVote} /> : !error && <p>Counting votes…</p>)}
+        {closed && !results && !error && <p>Counting votes…</p>}
       </section>
 
       {!closed && <SharePanel url={pollUrl(pollId)} />}
@@ -203,45 +212,76 @@ function BookLabel({ book }: { book: Book }) {
   )
 }
 
-export function Results({ poll, votes, myVote }: { poll: Poll; votes: Votes; myVote: number[] | undefined }) {
+// The results heading, with avatars of the voters whose ballots are being drawn, then `children`, then the bars.
+export function Results({
+  poll,
+  votes,
+  myVote,
+  children,
+}: {
+  poll: Poll
+  votes: Votes
+  myVote: number[] | undefined
+  children?: ReactNode
+}) {
   const ballots = useMemo(
-    () => [...votes.values()].sort((a, b) => a.votedAt.getTime() - b.votedAt.getTime()),
+    () => [...votes].sort(([, a], [, b]) => a.votedAt.getTime() - b.votedAt.getTime()),
     [votes],
   )
-  // How many ballots the replay has counted so far. Skip the replay for people who prefer less motion.
-  const [replayed, setReplayed] = useState(() =>
-    matchMedia('(prefers-reduced-motion: reduce)').matches ? ballots.length : 0,
-  )
+  // How many ballots the replay has started counting, and how many of those have finished drawing. Every ballot
+  // takes GROWTH_MS to draw, so they finish in the order they started. Skip the replay for people who prefer less
+  // motion.
+  const [replay, setReplay] = useState(() => {
+    const skip = matchMedia('(prefers-reduced-motion: reduce)').matches ? ballots.length : 0
+    return { started: skip, finished: skip }
+  })
 
   useEffect(() => {
     if (ballots.length === 0) return
-    const first = ballots[0].votedAt.getTime()
-    const span = ballots[ballots.length - 1].votedAt.getTime() - first
-    const timers = ballots.map((ballot, index) =>
-      setTimeout(
-        () => setReplayed((count) => Math.max(count, index + 1)),
-        REPLAY_START_MS + (span ? ((ballot.votedAt.getTime() - first) / span) * (REPLAY_END_MS - REPLAY_START_MS) : 0),
-      ),
-    )
+    const first = ballots[0][1].votedAt.getTime()
+    const span = ballots[ballots.length - 1][1].votedAt.getTime() - first
+    const timers = ballots.flatMap(([, ballot], index) => {
+      const at =
+        REPLAY_START_MS + (span ? ((ballot.votedAt.getTime() - first) / span) * (REPLAY_END_MS - REPLAY_START_MS) : 0)
+      return [
+        setTimeout(() => setReplay((replay) => ({ ...replay, started: Math.max(replay.started, index + 1) })), at),
+        setTimeout(
+          () => setReplay((replay) => ({ ...replay, finished: Math.max(replay.finished, index + 1) })),
+          at + GROWTH_MS,
+        ),
+      ]
+    })
     return () => timers.forEach(clearTimeout)
   }, [ballots])
 
-  const counts = tally(ballots.slice(0, replayed), poll.books.length)
+  const counts = tally(
+    ballots.slice(0, replay.started).map(([, ballot]) => ballot),
+    poll.books.length,
+  )
   // Bars are scaled so the winner's final bar spans the full width; the others grow towards their share of it.
-  const maxCount = Math.max(...tally(ballots, poll.books.length))
+  const maxCount = Math.max(...tally(votes.values(), poll.books.length))
 
   return (
-    <BarChart
-      max={maxCount}
-      bars={poll.books.map((book, index) => ({
-        label: (
-          <>
-            {book.title}
-            {myVote?.includes(index) && <span className="muted"> · your vote</span>}
-          </>
-        ),
-        value: counts[index],
-      }))}
-    />
+    <>
+      <div className="results-heading">
+        <h1>Results</h1>
+        <Avatars
+          voters={ballots.slice(replay.finished, replay.started).map(([uid, ballot]) => ({ id: uid, name: ballot.name }))}
+        />
+      </div>
+      {children}
+      <BarChart
+        max={maxCount}
+        bars={poll.books.map((book, index) => ({
+          label: (
+            <>
+              {book.title}
+              {myVote?.includes(index) && <span className="muted"> · your vote</span>}
+            </>
+          ),
+          value: counts[index],
+        }))}
+      />
+    </>
   )
 }

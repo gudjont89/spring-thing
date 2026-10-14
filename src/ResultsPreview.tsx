@@ -19,23 +19,22 @@ const poll: Poll = {
 
 // Ballots cast over a few minutes, in the order they came in.
 const votes: Votes = new Map([
-  ['alice', { books: [1, 3], votedAt: new Date('2026-10-13T20:00:12') }],
-  ['bob', { books: [1, 2], votedAt: new Date('2026-10-13T20:00:47') }],
-  ['carol', { books: [0, 1], votedAt: new Date('2026-10-13T20:01:30') }],
-  ['dave', { books: [3], votedAt: new Date('2026-10-13T20:02:05') }],
-  ['erin', { books: [1, 3], votedAt: new Date('2026-10-13T20:02:51') }],
-  ['frank', { books: [0, 2], votedAt: new Date('2026-10-13T20:01:40') }],
-  ['grace', { books: [2, 3], votedAt: new Date('2026-10-13T20:00:25') }],
-  ['heidi', { books: [2], votedAt: new Date('2026-10-13T20:01:33') }],
-  ['ivan', { books: [0, 1], votedAt: new Date('2026-10-13T20:02:20') }],
-  ['judy', { books: [1, 2], votedAt: new Date('2026-10-13T20:02:40') }],
+  ['alice', { name: 'Alice', books: [1, 3], votedAt: new Date('2026-10-13T20:00:12') }],
+  ['bob', { name: 'Bob', books: [1, 2], votedAt: new Date('2026-10-13T20:00:47') }],
+  ['carol', { name: 'Carol', books: [0, 1], votedAt: new Date('2026-10-13T20:01:30') }],
+  ['dave', { name: 'Dave', books: [3], votedAt: new Date('2026-10-13T20:02:05') }],
+  ['erin', { name: 'Erin', books: [1, 3], votedAt: new Date('2026-10-13T20:02:51') }],
+  ['frank', { name: 'Frank', books: [0, 2], votedAt: new Date('2026-10-13T20:01:40') }],
+  ['grace', { name: 'Grace', books: [2, 3], votedAt: new Date('2026-10-13T20:00:25') }],
+  ['heidi', { name: 'Heidi', books: [2], votedAt: new Date('2026-10-13T20:01:33') }],
+  ['ivan', { name: 'Ivan', books: [0, 1], votedAt: new Date('2026-10-13T20:02:20') }],
+  ['judy', { name: 'Judy', books: [1, 2], votedAt: new Date('2026-10-13T20:02:40') }],
 ])
 
 export function ResultsPreview() {
   return (
     <section className="card sketched">
       <Sketch />
-      <h1>Results</h1>
       <Results poll={poll} votes={votes} myVote={[1, 3]} />
     </section>
   )

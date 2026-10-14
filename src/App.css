@@ -225,6 +225,67 @@ button.ghost {
   accent-color: var(--accent);
 }
 
+.results-heading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.card .results-heading h1 {
+  margin: 0;
+}
+
+.avatars {
+  --avatar-size: 2rem;
+  --avatar-gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+  /* Keep the row's height the same whether or not any avatars are showing. */
+  min-height: var(--avatar-size);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.avatars-more {
+  margin-right: var(--avatar-gap);
+  color: var(--text);
+}
+
+/* Each slot is an avatar plus the gap before it; the avatar sits at its right edge, so it shows up in place. */
+.avatar-slot {
+  display: flex;
+  justify-content: flex-end;
+  width: calc(var(--avatar-size) + var(--avatar-gap));
+  flex: none;
+  animation: avatar-in 300ms ease-out;
+}
+
+@keyframes avatar-in {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+}
+
+.avatar {
+  --sketch-stroke: var(--accent);
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  color: var(--text-h);
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar-slot {
+    animation: none;
+  }
+}
+
 .bar-chart {
   display: flex;
   flex-direction: column;

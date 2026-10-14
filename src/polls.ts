@@ -39,6 +39,8 @@ export interface Ballot {
   books: number[]
   /** When the voter last cast or changed their vote. */
   votedAt: Date
+  /** The voter's name. Votes don't record one yet, so only made-up ballots have it. */
+  name?: string
 }
 
 /** Maps voter uid to their ballot. */

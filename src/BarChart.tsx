@@ -8,7 +8,7 @@ const generator = rough.generator()
 const STRIPE_GAP = 9
 // How long one stripe takes to draw, and how long one change to a bar's length takes to draw in.
 const STROKE_MS = 150
-const GROWTH_MS = 2000
+export const GROWTH_MS = 2000
 
 // One change to a bar's length: starting at `at`, it pushes the bar's drawn front `distance` pixels further over
 // GROWTH_MS.
