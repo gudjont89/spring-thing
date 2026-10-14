@@ -28,15 +28,15 @@ const votes: Votes = new Map([
   ['carol', { name: 'Carol', books: [0, 1], votedAt: new Date('2026-10-13T20:01:30') }],
   ['dave', { name: 'Dave', books: [3], votedAt: new Date('2026-10-13T20:02:05') }],
   ['erin', { name: 'Erin', books: [1, 3], votedAt: new Date('2026-10-13T20:02:51') }],
-  ['frank', { name: 'Frank', books: [0, 2], votedAt: new Date('2026-10-13T20:01:40') }],
+  ['frank', { name: 'Frank', books: [1, 2], votedAt: new Date('2026-10-13T20:01:40') }],
   ['grace', { name: 'Grace', books: [2, 3], votedAt: new Date('2026-10-13T20:00:25') }],
-  ['heidi', { name: 'Heidi', books: [2], votedAt: new Date('2026-10-13T20:01:33') }],
+  ['heidi', { name: 'Heidi', books: [2, 1], votedAt: new Date('2026-10-13T20:01:33') }],
   ['ivan', { name: 'Ivan', books: [0, 1], votedAt: new Date('2026-10-13T20:02:20') }],
   ['judy', { name: 'Judy', books: [1, 2], votedAt: new Date('2026-10-13T20:02:40') }],
   ['kate', { name: 'Kate', books: [4, 5], votedAt: new Date('2026-10-13T20:01:31') }],
-  ['leo', { name: 'Leo', books: [5, 6], votedAt: new Date('2026-10-13T20:01:35') }],
+  ['leo', { name: 'Leo', books: [1, 6], votedAt: new Date('2026-10-13T20:01:35') }],
   ['mallory', { name: 'Mallory', books: [4, 7], votedAt: new Date('2026-10-13T20:01:37') }],
-  ['nina', { name: 'Nina', books: [5], votedAt: new Date('2026-10-13T20:01:38') }],
+  ['nina', { name: 'Nina', books: [5, 1], votedAt: new Date('2026-10-13T20:01:38') }],
 ])
 
 export function ResultsPreview() {

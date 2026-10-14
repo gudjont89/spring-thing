@@ -333,7 +333,12 @@ button.ghost {
 .bar-value {
   grid-column: 2;
   grid-row: 1 / span 2;
-  align-self: center;
+  /*
+   * Sit the digits on the bar's lower edge. Workbench's ascent and descent add up to exactly 1em, so with a line
+   * height of 1 the baseline is its descent (128/1024 = 0.125em) above the bottom of the line.
+   */
+  align-self: end;
+  margin-bottom: -0.125em;
   width: 2.5ch;
   font-size: 2.25rem;
   line-height: 1;

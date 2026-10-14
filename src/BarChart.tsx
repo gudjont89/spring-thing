@@ -99,10 +99,12 @@ function Stripes({ fraction }: { fraction: number }) {
   // The outline: the top and bottom edges span the whole row and are clipped at the front, so their wobble doesn't
   // change as the bar grows, and the right edge moves along with the front.
   const edges = useMemo(() => {
-    const line = (x1: number, y1: number, x2: number, y2: number, offset: number) =>
-      generator.toPaths(generator.line(x1, y1, x2, y2, { roughness: 1.2, seed: seed + offset }))[0].d
+    const line = (x1: number, y1: number, x2: number, y2: number, offset: number, bowing = 1) =>
+      generator.toPaths(generator.line(x1, y1, x2, y2, { roughness: 1.2, bowing, seed: seed + offset }))[0].d
     return {
-      long: [line(0, 0, width, 0, 0), line(0, height, width, height, 1)],
+      // Rough bows a line in proportion to its length, which across a whole row moves the edge several pixels off the
+      // bar's top and bottom, so these don't bow; they still wobble.
+      long: [line(0, 0, width, 0, 0, 0), line(0, height, width, height, 1, 0)],
       left: line(0, 0, 0, height, 2),
       right: line(0, 0, 0, height, 3),
     }
