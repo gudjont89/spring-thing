@@ -177,10 +177,6 @@ export function PollPage({ pollId }: { pollId: string }) {
           </form>
         )}
 
-        {!closed && !isCreator && myVote !== undefined && (
-          <p className="muted">Thanks for voting. Results will be shown when voting ends.</p>
-        )}
-
         {error && <p className="error">{error}</p>}
       </section>
 
