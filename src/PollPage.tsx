@@ -31,6 +31,8 @@ export function PollPage({ pollId }: { pollId: string }) {
   const [error, setError] = useState<string | null>(null)
 
   const closed = poll ? now >= poll.closesAt.getTime() : false
+  // Only the creator sees the results chart, usually on a projector.
+  const isCreator = !!poll && uid === poll.ownerId
 
   useEffect(() => {
     ensureSignedIn().then(
@@ -55,7 +57,7 @@ export function PollPage({ pollId }: { pollId: string }) {
 
   // Read the ballots once when voting ends; they cannot change after that.
   useEffect(() => {
-    if (!closed) return
+    if (!closed || !isCreator) return
     let cancelled = false
     let retryTimer: ReturnType<typeof setTimeout> | undefined
     let retries = 0
@@ -82,7 +84,7 @@ export function PollPage({ pollId }: { pollId: string }) {
       cancelled = true
       clearTimeout(retryTimer)
     }
-  }, [pollId, closed])
+  }, [pollId, closed, isCreator])
 
   if (poll === undefined) {
     return (
@@ -104,7 +106,6 @@ export function PollPage({ pollId }: { pollId: string }) {
     )
   }
 
-  const isCreator = uid === poll.ownerId
   const voted = myVote !== undefined
   const choice = myVote ?? selected ?? []
 
@@ -131,10 +132,15 @@ export function PollPage({ pollId }: { pollId: string }) {
     <>
       <section className="card sketched">
         <Sketch />
-        {closed ? (
+        {closed && isCreator ? (
           <Results poll={poll} votes={results} myVote={myVote}>
             <p className="badge">{results || error ? 'Voting has ended.' : 'Counting votes…'}</p>
           </Results>
+        ) : closed ? (
+          <>
+            <h1>Results</h1>
+            <p className="badge">Voting has ended.</p>
+          </>
         ) : (
           <>
             <h1>Which book should we read next?</h1>
