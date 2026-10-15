@@ -108,9 +108,12 @@ export function PollPage({ pollId }: { pollId: string }) {
 
   const voted = myVote !== undefined
   const choice = myVote ?? selected ?? []
+  // With one vote, the books are radio buttons: picking another book replaces the pick.
+  const single = poll.votesPerVoter === 1
 
   function toggle(index: number) {
-    setSelected(choice.includes(index) ? choice.filter((book) => book !== index) : [...choice, index])
+    if (single) setSelected([index])
+    else setSelected(choice.includes(index) ? choice.filter((book) => book !== index) : [...choice, index])
   }
 
   async function handleVote(event: FormEvent) {
@@ -154,22 +157,29 @@ export function PollPage({ pollId }: { pollId: string }) {
           <form className="vote-form" onSubmit={handleVote}>
             <fieldset className="field">
               <legend>
-                {poll.votesPerVoter === 1 ? 'Pick one book.' : `Pick up to ${poll.votesPerVoter} books.`}{' '}
-                <span className="muted">
-                  ({choice.length} of {poll.votesPerVoter} chosen)
-                </span>
+                {single ? (
+                  'Pick one book.'
+                ) : (
+                  <>
+                    Pick up to {poll.votesPerVoter} books.{' '}
+                    <span className="muted">
+                      ({choice.length} of {poll.votesPerVoter} chosen)
+                    </span>
+                  </>
+                )}
               </legend>
               {poll.books.map((book, index) => {
                 const checked = choice.includes(index)
                 return (
                   <label className="choice sketched" key={index}>
                     <Sketch fill="hachure" />
-                    {/* The box's fill shows whether it is picked; the checkbox stays for keyboards and screen readers. */}
+                    {/* The box's fill shows whether it is picked; the input stays for keyboards and screen readers. */}
                     <input
-                      type="checkbox"
+                      type={single ? 'radio' : 'checkbox'}
+                      name="book"
                       className="visually-hidden"
                       checked={checked}
-                      disabled={voted || (!checked && choice.length >= poll.votesPerVoter)}
+                      disabled={voted || (!single && !checked && choice.length >= poll.votesPerVoter)}
                       onChange={() => toggle(index)}
                     />
                     <BookLabel book={book} />

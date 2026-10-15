@@ -73,7 +73,7 @@ button.ghost .sketch path {
   margin-bottom: 0.5rem;
 }
 
-input:not([type='checkbox']),
+input:not([type='checkbox'], [type='radio']),
 select {
   font: inherit;
   color: var(--text-h);
