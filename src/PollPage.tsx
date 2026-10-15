@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import type { FirestoreError } from 'firebase/firestore'
+import { serverNow, syncClock } from './clock'
 import { ensureSignedIn } from './firebase'
 import { castVote, fetchVotes, pollUrl, tally, watchPoll, watchVote, type Book, type Poll, type Votes } from './polls'
 import { QrCode } from './QrCode'
@@ -24,7 +25,8 @@ export function PollPage({ pollId }: { pollId: string }) {
   const [myVote, setMyVote] = useState<number[] | undefined>(undefined)
   // null until the poll closes and the ballots have been read
   const [results, setResults] = useState<Votes | null>(null)
-  const [now, setNow] = useState(() => Date.now())
+  const [now, setNow] = useState(serverNow)
+  const [clockSynced, setClockSynced] = useState(false)
   // the voter's picks before they vote; once they have voted, their saved vote is shown instead
   const [selected, setSelected] = useState<number[] | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -48,12 +50,27 @@ export function PollPage({ pollId }: { pollId: string }) {
     return watchVote(pollId, uid, setMyVote, (err) => setError(err.message))
   }, [pollId, uid])
 
-  // Tick once a second for the countdown, until voting ends.
+  // If the clock can't be measured, the browser's own clock is used as is.
+  useEffect(() => {
+    syncClock().then(
+      () => setClockSynced(true),
+      () => {},
+    )
+  }, [])
+
+  // Tick whenever the countdown's second changes, until voting ends, so every device counts down in step. Start over
+  // once the clock is measured, since that moves the ticks.
   useEffect(() => {
     if (!poll || closed) return
-    const timer = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(timer)
-  }, [poll, closed])
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const tick = () => {
+      const now = serverNow()
+      setNow(now)
+      timer = setTimeout(tick, (poll.closesAt.getTime() - now) % 1000 || 1000)
+    }
+    tick()
+    return () => clearTimeout(timer)
+  }, [poll, closed, clockSynced])
 
   // Read the ballots once when voting ends; they cannot change after that.
   useEffect(() => {

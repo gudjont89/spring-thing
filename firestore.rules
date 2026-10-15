@@ -5,6 +5,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Each browser stamps the server's time here to measure how far its own clock is off (see src/clock.ts).
+    match /clocks/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['at'])
+        && request.resource.data.at == request.time;
+    }
+
     match /polls/{pollId} {
       allow read: if true;
 
