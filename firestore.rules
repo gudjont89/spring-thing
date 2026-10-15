@@ -23,7 +23,7 @@ service cloud.firestore {
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.createdAt == request.time;
 
-      // Vote documents are keyed by the voter's uid, so each browser has one ballot.
+      // Vote documents are keyed by the voter's uid, so each browser has one ballot, which cannot be changed once cast.
       // A ballot lists distinct book indexes, at most votesPerVoter of them. The poll's creator cannot vote.
       match /votes/{voterId} {
         function poll() {
@@ -39,7 +39,7 @@ service cloud.firestore {
           || request.time >= deadline();
         allow list: if request.time >= deadline();
 
-        allow create, update: if request.auth != null
+        allow create: if request.auth != null
           && request.auth.uid == voterId
           && request.auth.uid != poll().ownerId
           && request.time < deadline()

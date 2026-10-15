@@ -25,7 +25,7 @@ export function PollPage({ pollId }: { pollId: string }) {
   // null until the poll closes and the ballots have been read
   const [results, setResults] = useState<Votes | null>(null)
   const [now, setNow] = useState(() => Date.now())
-  // null until the voter changes their picks; their saved vote applies until then
+  // the voter's picks before they vote; once they have voted, their saved vote is shown instead
   const [selected, setSelected] = useState<number[] | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -105,8 +105,8 @@ export function PollPage({ pollId }: { pollId: string }) {
   }
 
   const isCreator = uid === poll.ownerId
-  const choice = selected ?? myVote ?? []
-  const choiceUnchanged = myVote !== undefined && sameBooks(choice, myVote)
+  const voted = myVote !== undefined
+  const choice = myVote ?? selected ?? []
 
   function toggle(index: number) {
     setSelected(choice.includes(index) ? choice.filter((book) => book !== index) : [...choice, index])
@@ -163,7 +163,7 @@ export function PollPage({ pollId }: { pollId: string }) {
                       type="checkbox"
                       className="visually-hidden"
                       checked={checked}
-                      disabled={!checked && choice.length >= poll.votesPerVoter}
+                      disabled={voted || (!checked && choice.length >= poll.votesPerVoter)}
                       onChange={() => toggle(index)}
                     />
                     <BookLabel book={book} />
@@ -171,8 +171,8 @@ export function PollPage({ pollId }: { pollId: string }) {
                 )
               })}
             </fieldset>
-            <Button type="submit" disabled={choice.length === 0 || choiceUnchanged || submitting || !uid}>
-              {submitting ? 'Voting…' : myVote === undefined ? 'Vote' : 'Change vote'}
+            <Button type="submit" disabled={choice.length === 0 || voted || submitting || !uid}>
+              {submitting ? 'Voting…' : voted ? 'Voted' : 'Vote'}
             </Button>
           </form>
         )}
@@ -190,10 +190,6 @@ export function PollPage({ pollId }: { pollId: string }) {
 function formatRemaining(ms: number): string {
   const seconds = Math.max(0, Math.ceil(ms / 1000))
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
-}
-
-function sameBooks(a: number[], b: number[]): boolean {
-  return a.length === b.length && a.every((book) => b.includes(book))
 }
 
 function BookLabel({ book }: { book: Book }) {
