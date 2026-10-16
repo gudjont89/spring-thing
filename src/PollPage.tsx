@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import type { FirestoreError } from 'firebase/firestore'
 import { serverNow, syncClock } from './clock'
 import { ensureSignedIn } from './firebase'
-import { castVote, fetchVotes, pollUrl, tally, watchPoll, watchVote, type Book, type Poll, type Votes } from './polls'
+import { castVote, fetchVotes, pollUrl, tally, watchPoll, watchVote, type Poll, type Votes } from './polls'
 import { QrCode } from './QrCode'
 import { Avatars } from './Avatars'
 import { BarChart, GROWTH_MS } from './BarChart'
@@ -125,12 +125,12 @@ export function PollPage({ pollId }: { pollId: string }) {
 
   const voted = myVote !== undefined
   const choice = myVote ?? selected ?? []
-  // With one vote, the books are radio buttons: picking another book replaces the pick.
+  // With one vote, the options are radio buttons: picking another option replaces the pick.
   const single = poll.votesPerVoter === 1
 
   function toggle(index: number) {
     if (single) setSelected([index])
-    else setSelected(choice.includes(index) ? choice.filter((book) => book !== index) : [...choice, index])
+    else setSelected(choice.includes(index) ? choice.filter((option) => option !== index) : [...choice, index])
   }
 
   async function handleVote(event: FormEvent) {
@@ -163,7 +163,7 @@ export function PollPage({ pollId }: { pollId: string }) {
           </>
         ) : (
           <>
-            <h1>Which book should we read next?</h1>
+            <h1>{poll.question ?? 'Please vote'}</h1>
             <p className="badge">Voting ends in {formatRemaining(poll.closesAt.getTime() - now)}.</p>
           </>
         )}
@@ -175,17 +175,17 @@ export function PollPage({ pollId }: { pollId: string }) {
             <fieldset className="field">
               <legend>
                 {single ? (
-                  'Pick one book.'
+                  'Pick one option.'
                 ) : (
                   <>
-                    Pick up to {poll.votesPerVoter} books.{' '}
+                    Pick up to {poll.votesPerVoter} options.{' '}
                     <span className="muted">
                       ({choice.length} of {poll.votesPerVoter} chosen)
                     </span>
                   </>
                 )}
               </legend>
-              {poll.books.map((book, index) => {
+              {poll.options.map((option, index) => {
                 const checked = choice.includes(index)
                 return (
                   <label className="choice sketched" key={index}>
@@ -193,13 +193,13 @@ export function PollPage({ pollId }: { pollId: string }) {
                     {/* The box's fill shows whether it is picked; the input stays for keyboards and screen readers. */}
                     <input
                       type={single ? 'radio' : 'checkbox'}
-                      name="book"
+                      name="option"
                       className="visually-hidden"
                       checked={checked}
                       disabled={voted || (!single && !checked && choice.length >= poll.votesPerVoter)}
                       onChange={() => toggle(index)}
                     />
-                    <BookLabel book={book} />
+                    <span className="option">{option}</span>
                   </label>
                 )
               })}
@@ -223,15 +223,6 @@ export function PollPage({ pollId }: { pollId: string }) {
 function formatRemaining(ms: number): string {
   const seconds = Math.max(0, Math.ceil(ms / 1000))
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
-}
-
-function BookLabel({ book }: { book: Book }) {
-  return (
-    <span className="book">
-      {book.title}
-      {book.author && <span className="muted"> by {book.author}</span>}
-    </span>
-  )
 }
 
 // The results heading, with avatars of the voters whose ballots are being drawn, then `children`, then the bars.
@@ -287,10 +278,10 @@ export function Results({
 
   const counts = tally(
     ballots.slice(0, replay.started).map(([, ballot]) => ballot),
-    poll.books.length,
+    poll.options.length,
   )
   // Bars are scaled so the winner's final bar spans the full width; the others grow towards their share of it.
-  const maxCount = Math.max(...tally(ballots.map(([, ballot]) => ballot), poll.books.length))
+  const maxCount = Math.max(...tally(ballots.map(([, ballot]) => ballot), poll.options.length))
   const drawing = ballots.slice(replay.finished, replay.started)
 
   return (
@@ -306,10 +297,10 @@ export function Results({
         max={maxCount}
         // The counts only show once every ballot has been drawn.
         showValues={votes !== null && replay.finished === ballots.length}
-        bars={poll.books.map((book, index) => ({
+        bars={poll.options.map((option, index) => ({
           label: (
             <>
-              {book.title}
+              {option}
               {myVote?.includes(index) && <span className="muted"> · your vote</span>}
             </>
           ),

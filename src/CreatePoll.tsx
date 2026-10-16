@@ -2,17 +2,14 @@ import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent 
 import {
   createPoll,
   DEFAULT_DURATION_MINUTES,
-  MAX_AUTHOR_LENGTH,
-  MAX_BOOKS,
   MAX_DURATION_MINUTES,
-  MAX_TITLE_LENGTH,
-  MIN_BOOKS,
+  MAX_OPTION_LENGTH,
+  MAX_OPTIONS,
+  MAX_QUESTION_LENGTH,
   MIN_DURATION_MINUTES,
-  type Book,
+  MIN_OPTIONS,
 } from './polls'
 import { Button, Sketch, TextInput } from './Sketch'
-
-const emptyBook = { title: '', author: '' }
 
 interface StepperProps {
   label: string
@@ -52,54 +49,53 @@ function Stepper({ label, value, min, max, onChange, format = String }: StepperP
 }
 
 export function CreatePoll() {
-  const [books, setBooks] = useState([emptyBook])
+  const [question, setQuestion] = useState('')
+  const [options, setOptions] = useState([''])
   const [requestedVotes, setRequestedVotes] = useState(1)
   const [durationMinutes, setDurationMinutes] = useState(DEFAULT_DURATION_MINUTES)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const titleInputs = useRef<(HTMLInputElement | null)[]>([])
-  const focusLastTitle = useRef(false)
+  const optionInputs = useRef<(HTMLInputElement | null)[]>([])
+  const focusLastOption = useRef(false)
 
   useEffect(() => {
-    if (focusLastTitle.current) {
-      titleInputs.current[books.length - 1]?.focus()
-      focusLastTitle.current = false
+    if (focusLastOption.current) {
+      optionInputs.current[options.length - 1]?.focus()
+      focusLastOption.current = false
     }
-  }, [books])
+  }, [options])
 
-  const filledBooks: Book[] = books
-    .map((book) => ({ title: book.title.trim(), author: book.author.trim() || null }))
-    .filter((book) => book.title !== '')
-  const bookKeys = filledBooks.map((book) => `${book.title}\n${book.author ?? ''}`.toLowerCase())
-  const hasDuplicates = new Set(bookKeys).size !== bookKeys.length
-  // Voting for every book would say nothing, so voters must leave at least one out.
-  const maxVotesPerVoter = Math.max(1, filledBooks.length - 1)
-  // Removing books can lower the maximum below what was chosen, so clamp rather than invalidate.
+  const filledOptions = options.map((option) => option.trim()).filter((option) => option !== '')
+  const lowercaseOptions = filledOptions.map((option) => option.toLowerCase())
+  const hasDuplicates = new Set(lowercaseOptions).size !== lowercaseOptions.length
+  // Voting for every option would say nothing, so voters must leave at least one out.
+  const maxVotesPerVoter = Math.max(1, filledOptions.length - 1)
+  // Removing options can lower the maximum below what was chosen, so clamp rather than invalidate.
   const votesPerVoter = Math.min(requestedVotes, maxVotesPerVoter)
-  const canSubmit = filledBooks.length >= MIN_BOOKS && !hasDuplicates && !submitting
+  const canSubmit = filledOptions.length >= MIN_OPTIONS && !hasDuplicates && !submitting
 
-  function setBook(index: number, field: keyof typeof emptyBook, value: string) {
-    setBooks(books.map((book, i) => (i === index ? { ...book, [field]: value } : book)))
+  function setOption(index: number, value: string) {
+    setOptions(options.map((option, i) => (i === index ? value : option)))
   }
 
-  function addBook() {
-    if (books.length >= MAX_BOOKS) return
-    focusLastTitle.current = true
-    setBooks([...books, emptyBook])
+  function addOption() {
+    if (options.length >= MAX_OPTIONS) return
+    focusLastOption.current = true
+    setOptions([...options, ''])
   }
 
-  // The list never goes empty: removing the last book leaves a blank one in its place.
-  function removeBook(index: number) {
-    const remaining = books.filter((_, i) => i !== index)
-    setBooks(remaining.length > 0 ? remaining : [emptyBook])
-    focusLastTitle.current = remaining.length === 0
+  // The list never goes empty: removing the last option leaves a blank one in its place.
+  function removeOption(index: number) {
+    const remaining = options.filter((_, i) => i !== index)
+    setOptions(remaining.length > 0 ? remaining : [''])
+    focusLastOption.current = remaining.length === 0
   }
 
-  // Enter adds another book instead of submitting the form.
-  function handleBookKeyDown(event: KeyboardEvent) {
+  // Enter adds another option instead of submitting the form.
+  function handleOptionKeyDown(event: KeyboardEvent) {
     if (event.key !== 'Enter') return
     event.preventDefault()
-    addBook()
+    addOption()
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -107,7 +103,7 @@ export function CreatePoll() {
     setSubmitting(true)
     setError(null)
     try {
-      const pollId = await createPoll(filledBooks, votesPerVoter, durationMinutes)
+      const pollId = await createPoll(question.trim() || null, filledOptions, votesPerVoter, durationMinutes)
       location.hash = `#/p/${pollId}`
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -118,44 +114,42 @@ export function CreatePoll() {
   return (
     <form className="card sketched" onSubmit={handleSubmit}>
       <Sketch />
-      <h1>Pick the next book</h1>
+      <h1>Create a poll</h1>
+
+      <TextInput
+        value={question}
+        onChange={(event) => setQuestion(event.target.value)}
+        maxLength={MAX_QUESTION_LENGTH}
+        placeholder="Question (optional)"
+        aria-label="Question"
+        autoFocus
+      />
 
       <fieldset className="field">
-        {books.map((book, index) => (
-          <div className="book-entry" key={index}>
-            <div className="book-fields">
-              <TextInput
-                ref={(element) => {
-                  titleInputs.current[index] = element
-                }}
-                value={book.title}
-                onChange={(event) => setBook(index, 'title', event.target.value)}
-                onKeyDown={handleBookKeyDown}
-                maxLength={MAX_TITLE_LENGTH}
-                placeholder={`Title ${index + 1}`}
-                aria-label={`Title of book ${index + 1}`}
-                autoFocus={index === 0}
-              />
-              <TextInput
-                value={book.author}
-                onChange={(event) => setBook(index, 'author', event.target.value)}
-                onKeyDown={handleBookKeyDown}
-                maxLength={MAX_AUTHOR_LENGTH}
-                placeholder="Author (optional)"
-                aria-label={`Author of book ${index + 1}`}
-              />
-            </div>
+        {options.map((option, index) => (
+          <div className="option-entry" key={index}>
+            <TextInput
+              ref={(element) => {
+                optionInputs.current[index] = element
+              }}
+              value={option}
+              onChange={(event) => setOption(index, event.target.value)}
+              onKeyDown={handleOptionKeyDown}
+              maxLength={MAX_OPTION_LENGTH}
+              placeholder={`Option ${index + 1}`}
+              aria-label={`Option ${index + 1}`}
+            />
             <Button
               type="button"
               ghost
               icon="cross"
-              onClick={() => removeBook(index)}
-              aria-label={`Remove book ${index + 1}`}
+              onClick={() => removeOption(index)}
+              aria-label={`Remove option ${index + 1}`}
             />
           </div>
         ))}
-        {books.length < MAX_BOOKS && (
-          <Button type="button" ghost round icon="plus" onClick={addBook} aria-label="Add book" />
+        {options.length < MAX_OPTIONS && (
+          <Button type="button" ghost round icon="plus" onClick={addOption} aria-label="Add option" />
         )}
       </fieldset>
 
@@ -176,7 +170,7 @@ export function CreatePoll() {
         format={(minutes) => `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`}
       />
 
-      {hasDuplicates && <p className="error">Each book can only be listed once.</p>}
+      {hasDuplicates && <p className="error">Each option can only be listed once.</p>}
       {error && <p className="error">Could not create the poll: {error}</p>}
 
       <Button type="submit" disabled={!canSubmit}>

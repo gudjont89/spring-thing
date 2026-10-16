@@ -19,13 +19,15 @@ service cloud.firestore {
 
       // Polls cannot be changed once created; voting ends durationMinutes after createdAt.
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['books', 'votesPerVoter', 'durationMinutes', 'ownerId', 'createdAt'])
-        && request.resource.data.books is list
-        && request.resource.data.books.size() >= 2
-        && request.resource.data.books.size() <= 15
+        && request.resource.data.keys().hasOnly(['question', 'options', 'votesPerVoter', 'durationMinutes', 'ownerId', 'createdAt'])
+        // The question is optional.
+        && (!('question' in request.resource.data) || request.resource.data.question is string)
+        && request.resource.data.options is list
+        && request.resource.data.options.size() >= 2
+        && request.resource.data.options.size() <= 15
         && request.resource.data.votesPerVoter is int
         && request.resource.data.votesPerVoter >= 1
-        && request.resource.data.votesPerVoter < request.resource.data.books.size()
+        && request.resource.data.votesPerVoter < request.resource.data.options.size()
         && request.resource.data.durationMinutes is int
         && request.resource.data.durationMinutes >= 1
         && request.resource.data.durationMinutes <= 5
@@ -33,7 +35,7 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
 
       // Vote documents are keyed by the voter's uid, so each browser has one ballot, which cannot be changed once cast.
-      // A ballot lists distinct book indexes, at most votesPerVoter of them. The poll's creator cannot vote.
+      // A ballot lists distinct option indexes, at most votesPerVoter of them. The poll's creator cannot vote.
       match /votes/{voterId} {
         function poll() {
           return get(/databases/$(database)/documents/polls/$(pollId)).data;
@@ -52,13 +54,13 @@ service cloud.firestore {
           && request.auth.uid == voterId
           && request.auth.uid != poll().ownerId
           && request.time < deadline()
-          && request.resource.data.keys().hasOnly(['books', 'votedAt'])
-          && request.resource.data.books is list
-          && request.resource.data.books.size() >= 1
-          && request.resource.data.books.size() <= poll().votesPerVoter
-          && request.resource.data.books.toSet().size() == request.resource.data.books.size()
-          // Rules cannot loop, so check every index against the valid ones, 0 to MAX_BOOKS - 1.
-          && request.resource.data.books.hasOnly([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14][0:poll().books.size()])
+          && request.resource.data.keys().hasOnly(['options', 'votedAt'])
+          && request.resource.data.options is list
+          && request.resource.data.options.size() >= 1
+          && request.resource.data.options.size() <= poll().votesPerVoter
+          && request.resource.data.options.toSet().size() == request.resource.data.options.size()
+          // Rules cannot loop, so check every index against the valid ones, 0 to MAX_OPTIONS - 1.
+          && request.resource.data.options.hasOnly([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14][0:poll().options.size()])
           && request.resource.data.votedAt == request.time;
       }
     }
